@@ -20,6 +20,10 @@ typealias IntBinOp = (Int) -> (Int) -> Int
 val add2: IntBinOp = { a -> { b -> a + b } }
 val multiply: IntBinOp = { a -> { b -> a * b } }
 
+typealias IntUnaryOp = (Int) -> Int
+
+val composer: (IntUnaryOp) -> (IntUnaryOp) -> IntUnaryOp = { x -> { y -> { z -> x(y(z)) } } }
+
 fun main() {
     val squareOfTriple = compose(::square, ::triple)
     println(squareOfTriple(5))
@@ -27,4 +31,10 @@ fun main() {
     println(add(5)(4))
     println(add2(6)(10))
     println(multiply(4)(5))
+
+    val square: IntUnaryOp = { it * it }
+    val triple: IntUnaryOp = { it * 3 }
+
+    val squareOfTriple2 = composer(square)(triple)
+    println(squareOfTriple(5))
 }
