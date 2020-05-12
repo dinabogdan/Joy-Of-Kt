@@ -9,3 +9,19 @@ fun <A, B, C, D> curried(): (A) -> (B) -> (C) -> (D) -> String = { a ->
         }
     }
 }
+
+fun <A, B, C> curry(f: (A, B) -> C): (A) -> (B) -> C = { a ->
+    { b ->
+        f(a, b)
+    }
+}
+
+val addTax2: (Double) -> (Double) -> Double = { x ->
+    { y -> y / 100 * x }
+}
+
+val add9percentTax: (Double) -> Double = addTax2(9.0)
+
+fun <T, U, V> swapArgs(f: (T) -> (U) -> V): (U) -> (T) -> (V) = { u ->
+    { t -> f(t)(u) }
+}
