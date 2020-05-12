@@ -46,7 +46,6 @@ fun buyDonuts(quantity: Int = 1, creditCard: CreditCard): Purchase {
     )
 }
 
-
 fun buyDonut(creditCard: CreditCard): Purchase {
     val donut = Donut()
     val payment = Payment(creditCard, donut.price)
