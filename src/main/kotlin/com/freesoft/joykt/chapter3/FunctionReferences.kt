@@ -31,6 +31,13 @@ fun <T, U, V> higherCompose(): ((U) -> V) -> ((T) -> U) -> (T) -> V =
             }
         }
 
+fun <T, U, V> higherAndThen(): ((T) -> U) -> ((U) -> V) -> (T) -> V =
+        { f ->
+            { g ->
+                { x -> g(f(x)) }
+            }
+        }
+
 fun main() {
     val squareOfTriple = compose(::square, ::triple)
     println(squareOfTriple(5))
@@ -46,5 +53,7 @@ fun main() {
     println(squareOfTriple2(5))
 
     val squareOfTriple3 = higherCompose<Int, Int, Int>()(square)(triple)
-    println(squareOfTriple3(5))
+    println("Compose: ${squareOfTriple3(5)}")
+    val squareOfTriple4 = higherAndThen<Int, Int, Int>()(triple)(square)
+    println("And then: ${squareOfTriple4(5)}")
 }
