@@ -1,8 +1,17 @@
 package com.freesoft.joykt.chapter5
 
+import java.lang.IllegalStateException
+
 sealed class List<A> {
 
     abstract fun isEmpty(): Boolean
+
+    fun cons(a: A): List<A> = Cons(a, this)
+
+    fun setHead(a: A): List<A> = when (this) {
+        is Nil -> throw IllegalStateException("setHead called on empty list is not allowed")
+        is Cons -> tail.cons(a)
+    }
 
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
@@ -11,8 +20,8 @@ sealed class List<A> {
     }
 
     internal class Cons<A>(
-            private val head: A,
-            private val tail: List<A>
+            internal val head: A,
+            internal val tail: List<A>
     ) : List<A>() {
         override fun isEmpty(): Boolean = false
 
@@ -34,7 +43,17 @@ sealed class List<A> {
 fun main() {
     val list: List<Int> = List(1, 2, 3)
 
-    println(list)
+    println("The initial list: $list")
+
+    val newList = list.cons(6)
+
+    println("The initial list after adding 6 to it: $list")
+    println("The new list obtained after adding 6 to the initial list: $newList")
+
+    val newSetHeadList = newList.setHead(1)
+
+    println(newSetHeadList)
+
 }
 
 
