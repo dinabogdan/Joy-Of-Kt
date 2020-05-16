@@ -13,6 +13,14 @@ sealed class List<A> {
         is Cons -> tail.cons(a)
     }
 
+    fun init(): List<A> =
+            when (this) {
+                is Nil -> throw IllegalStateException("init call on empty list is not allowed")
+                is Cons -> this.reverse().drop(1).reverse()
+            }
+
+    fun reverse(): List<A> = reverse(this, List.invoke())
+
     fun drop(n: Int): List<A> {
         tailrec fun drop(n: Int, list: List<A>): List<A> =
                 if (n <= 0) list else when (list) {
@@ -61,6 +69,12 @@ sealed class List<A> {
             is Nil -> list2
             is Cons -> concat(list1.tail, list2).cons(list1.head)
         }
+
+        tailrec fun <A> reverse(list: List<A>, acc: List<A>): List<A> =
+                when (list) {
+                    is Nil -> acc
+                    is Cons -> reverse(list.tail, acc.cons(list.head))
+                }
     }
 }
 
@@ -86,6 +100,8 @@ fun main() {
     val list2 = List(4, 5, 6)
 
     println(list.concat(list2))
+
+    println("Init call: ${List(1, 2, 3).init()}")
 
 }
 
