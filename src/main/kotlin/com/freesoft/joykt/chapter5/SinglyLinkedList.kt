@@ -22,6 +22,8 @@ sealed class List<A> {
         return drop(n, this)
     }
 
+    fun concat(list: List<A>): List<A> = concat(this, list)
+
     fun dropWhile(p: (A) -> Boolean): List<A> {
         tailrec fun dropWhile_(list: List<A>): List<A> = when (list) {
             is Nil -> list
@@ -54,6 +56,11 @@ sealed class List<A> {
     companion object {
         operator fun <A> invoke(vararg az: A): List<A> =
                 az.foldRight(Nil as List<A>) { a: A, list: List<A> -> Cons(a, list) }
+
+        fun <A> concat(list1: List<A>, list2: List<A>): List<A> = when (list1) {
+            is Nil -> list2
+            is Cons -> concat(list1.tail, list2).cons(list1.head)
+        }
     }
 }
 
@@ -75,6 +82,10 @@ fun main() {
     println(listAfterdrop)
 
     println(list.dropWhile { it < 3 })
+
+    val list2 = List(4, 5, 6)
+
+    println(list.concat(list2))
 
 }
 
