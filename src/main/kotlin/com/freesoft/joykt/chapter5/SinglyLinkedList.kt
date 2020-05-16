@@ -54,6 +54,16 @@ sealed class List<out A> {
 
     fun length(): Int = foldLeft(0) { i -> { i + 1 } }
 
+    fun <B> map(f: (A) -> B): List<B> = foldLeft(Nil) { acc: List<B> ->
+        { h: A -> Cons(f(h), acc) }
+    }.reverse()
+
+    fun filter(p: (A) -> Boolean): List<A> = foldRight(Nil) { x ->
+        { y: List<A> -> if (p(x)) Cons(x, y) else y }
+    }
+
+    fun <B> flatMap(f: (A) -> List<B>): List<B> = flatten(map(f))
+
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -129,6 +139,13 @@ fun product(list: List<Double>): Double = when (list) {
 fun sumFold(list: List<Int>): Int = list.foldLeft(0) { x -> { y -> x + y } }
 fun productFold(list: List<Double>): Double = list.foldLeft(1.0) { x -> { y -> x * y } }
 
+fun triple(list: List<Int>): List<Int> = List.foldRight(list, List()) { x ->
+    { y -> y.cons(x * 3) }
+}
+
+fun doubleToString(list: List<Double>): List<String> = List.foldRight(list, List()) { x ->
+    { y -> y.cons(x.toString()) }
+}
 
 fun main() {
     val list: List<Int> = List(1, 2, 3)
