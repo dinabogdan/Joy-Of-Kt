@@ -20,7 +20,9 @@ sealed class List<out A> {
                 is Cons -> this.reverse().drop(1).reverse()
             }
 
-    fun reverse(): List<A> = reverse(this, List.invoke())
+    fun reverse(): List<A> = reverse(this, invoke())
+
+    fun reverseFold(): List<A> = foldLeft(Nil as List<A>) { acc -> { acc.cons(it) } }
 
     fun drop(n: Int): List<A> {
         tailrec fun drop(n: Int, list: List<A>): List<A> =
@@ -40,6 +42,12 @@ sealed class List<out A> {
         }
         return dropWhile_(this)
     }
+
+    fun <B> foldRight(identity: B, f: (A) -> (B) -> B): B = foldRight(this, identity, f)
+
+    fun <B> foldLeft(identity: B, f: (B) -> (A) -> B): B = foldLeft(identity, this, f)
+
+    fun length(): Int = foldLeft(0) { i -> { i + 1 } }
 
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
@@ -76,6 +84,18 @@ sealed class List<out A> {
                     is Nil -> acc
                     is Cons -> reverse(list.tail, acc.cons(list.head))
                 }
+
+        fun <A, B> foldRight(list: List<A>, identity: B, f: (A) -> (B) -> B): B =
+                when (list) {
+                    is Nil -> identity
+                    is Cons -> f(list.head)(foldRight(list.tail, identity, f))
+                }
+
+        tailrec fun <A, B> foldLeft(acc: B, list: List<A>, f: (B) -> (A) -> B): B =
+                when (list) {
+                    is Nil -> acc
+                    is Cons -> foldLeft(f(acc)(list.head), list.tail, f)
+                }
     }
 }
 
@@ -89,14 +109,10 @@ fun product(list: List<Double>): Double = when (list) {
     is Cons -> if (list.head == 0.0) 0.0 else list.head * product(list.tail)
 }
 
-fun <A, B> foldRight(list: List<A>, identity: B, f: (A) -> (B) -> B): B =
-        when (list) {
-            is Nil -> identity
-            is Cons -> f(list.head)(foldRight(list.tail, identity, f))
-        }
 
-fun sumFold(list: List<Int>): Int = foldRight(list, 0) { x -> { y -> x + y } }
-fun productFold(list: List<Double>): Double = foldRight(list, 1.0) { x -> { y -> x * y } }
+fun sumFold(list: List<Int>): Int = list.foldLeft(0) { x -> { y -> x + y } }
+fun productFold(list: List<Double>): Double = list.foldLeft(1.0) { x -> { y -> x * y } }
+
 
 fun main() {
     val list: List<Int> = List(1, 2, 3)
@@ -125,6 +141,8 @@ fun main() {
 
     println("Sum: ${sum(list)}")
     println("Product: ${product(List(1.0, 2.0, 3.0))}")
+
+    println("Length of $list is ${list.length()}")
 
 }
 
