@@ -1,7 +1,5 @@
 package com.freesoft.joykt.chapter6
 
-import java.lang.RuntimeException
-
 sealed class Option<out A> {
 
     abstract fun isEmpty(): Boolean
@@ -20,6 +18,17 @@ sealed class Option<out A> {
         is None -> None
         is Some -> Some(f(value))
     }
+
+    fun <B> flatMap(f: (A) -> Option<B>): Option<B> = when (this) {
+        is None -> None
+        is Some -> f(value)
+    }
+
+    fun orElse(default: () -> Option<@UnsafeVariance A>): Option<A> =
+            map { this }.getOrElse(default)
+
+    fun filter(p: (A) -> Boolean): Option<A> =
+            flatMap { x -> if (p(x)) this else None }
 
     internal object None : Option<Nothing>() {
         override fun isEmpty(): Boolean = true
@@ -60,4 +69,14 @@ fun main() {
     println(max(listOf(1, 2, 3)).getOrElse(::getDefault))
 
 //    println(max(listOf()).getOrElse(::getDefault)) // throw an exception
+
+    val five = Option.Some(5).orElse { Option.Some(8) }
+
+    println(five)
+
+    fun f(): Int? = null
+
+    val none = Option.Some(f()).orElse { Option.Some(10) }
+
+    println(none)
 }
