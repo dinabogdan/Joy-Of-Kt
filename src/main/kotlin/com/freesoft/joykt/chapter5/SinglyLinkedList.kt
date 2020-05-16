@@ -140,11 +140,11 @@ fun sumFold(list: List<Int>): Int = list.foldLeft(0) { x -> { y -> x + y } }
 fun productFold(list: List<Double>): Double = list.foldLeft(1.0) { x -> { y -> x * y } }
 
 fun triple(list: List<Int>): List<Int> = List.foldRight(list, List()) { x ->
-    { y -> y.cons(x * 3) }
+    { y: List<Int> -> y.cons(x * 3) }
 }
 
 fun doubleToString(list: List<Double>): List<String> = List.foldRight(list, List()) { x ->
-    { y -> y.cons(x.toString()) }
+    { y: List<String> -> y.cons(x.toString()) }
 }
 
 fun main() {
