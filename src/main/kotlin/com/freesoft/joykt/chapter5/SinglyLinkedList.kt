@@ -110,6 +110,8 @@ sealed class List<out A> {
 
         fun <A> concatViaFoldRight(list1: List<A>, list2: List<A>): List<A> =
                 foldRight(list1, list2) { x -> { y -> Cons(x, y) } }
+
+        fun <A> flatten(list: List<List<A>>): List<A> = list.foldRight(Nil) { x -> x::concat }
     }
 }
 
