@@ -22,6 +22,14 @@ sealed class List<A> {
         return drop(n, this)
     }
 
+    fun dropWhile(p: (A) -> Boolean): List<A> {
+        tailrec fun dropWhile_(list: List<A>): List<A> = when (list) {
+            is Nil -> list
+            is Cons -> if (p(list.head)) dropWhile_(list.tail) else list
+        }
+        return dropWhile_(this)
+    }
+
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -66,6 +74,7 @@ fun main() {
     val listAfterdrop = list.drop(1)
     println(listAfterdrop)
 
+    println(list.dropWhile { it < 3 })
 
 }
 
