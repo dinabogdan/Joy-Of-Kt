@@ -16,6 +16,11 @@ sealed class Option<out A> {
         is Some -> value
     }
 
+    fun <B> map(f: (A) -> B): Option<B> = when (this) {
+        is None -> None
+        is Some -> Some(f(value))
+    }
+
     internal object None : Option<Nothing>() {
         override fun isEmpty(): Boolean = true
 
