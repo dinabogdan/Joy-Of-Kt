@@ -9,8 +9,17 @@ sealed class List<A> {
     fun cons(a: A): List<A> = Cons(a, this)
 
     fun setHead(a: A): List<A> = when (this) {
-        is Nil -> throw IllegalStateException("setHead called on empty list is not allowed")
+        is Nil -> throw IllegalStateException("setHead call on empty list is not allowed")
         is Cons -> tail.cons(a)
+    }
+
+    fun drop(n: Int): List<A> {
+        tailrec fun drop(n: Int, list: List<A>): List<A> =
+                if (n <= 0) list else when (list) {
+                    is Cons -> drop(n - 1, list.tail)
+                    is Nil -> list
+                }
+        return drop(n, this)
     }
 
     internal object Nil : List<Nothing>() {
@@ -53,6 +62,10 @@ fun main() {
     val newSetHeadList = newList.setHead(1)
 
     println(newSetHeadList)
+
+    val listAfterdrop = list.drop(1)
+    println(listAfterdrop)
+
 
 }
 
