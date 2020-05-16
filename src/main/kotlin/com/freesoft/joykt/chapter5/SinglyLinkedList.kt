@@ -24,6 +24,9 @@ sealed class List<out A> {
 
     fun reverseFold(): List<A> = foldLeft(Nil as List<A>) { acc -> { acc.cons(it) } }
 
+    fun <B> foldRightViaFoldLeft(identity: B, f: (A) -> (B) -> B): B =
+            this.reverse().foldLeft(identity) { x -> { y -> f(y)(x) } }
+
     fun drop(n: Int): List<A> {
         tailrec fun drop(n: Int, list: List<A>): List<A> =
                 if (n <= 0) list else when (list) {
@@ -42,6 +45,8 @@ sealed class List<out A> {
         }
         return dropWhile_(this)
     }
+
+    fun <B> coFoldRight(identity: B, f: (A) -> (B) -> B): B = coFoldRight(identity, this.reverse(), identity, f)
 
     fun <B> foldRight(identity: B, f: (A) -> (B) -> B): B = foldRight(this, identity, f)
 
@@ -96,6 +101,15 @@ sealed class List<out A> {
                     is Nil -> acc
                     is Cons -> foldLeft(f(acc)(list.head), list.tail, f)
                 }
+
+        private tailrec fun <A, B> coFoldRight(acc: B, list: List<A>, identity: B, f: (A) -> (B) -> B): B =
+                when (list) {
+                    is Nil -> acc
+                    is Cons -> coFoldRight(f(list.head)(acc), list.tail, identity, f)
+                }
+
+        fun <A> concatViaFoldRight(list1: List<A>, list2: List<A>): List<A> =
+                foldRight(list1, list2) { x -> { y -> Cons(x, y) } }
     }
 }
 
