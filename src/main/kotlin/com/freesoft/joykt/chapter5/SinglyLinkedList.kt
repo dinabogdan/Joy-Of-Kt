@@ -1,14 +1,15 @@
 package com.freesoft.joykt.chapter5
 
-import java.lang.IllegalStateException
+import com.freesoft.joykt.chapter5.List.Cons
+import com.freesoft.joykt.chapter5.List.Nil
 
-sealed class List<A> {
+sealed class List<out A> {
 
     abstract fun isEmpty(): Boolean
 
-    fun cons(a: A): List<A> = Cons(a, this)
+    fun cons(a: @UnsafeVariance A): List<A> = Cons(a, this)
 
-    fun setHead(a: A): List<A> = when (this) {
+    fun setHead(a: @UnsafeVariance A): List<A> = when (this) {
         is Nil -> throw IllegalStateException("setHead call on empty list is not allowed")
         is Cons -> tail.cons(a)
     }
@@ -30,7 +31,7 @@ sealed class List<A> {
         return drop(n, this)
     }
 
-    fun concat(list: List<A>): List<A> = concat(this, list)
+    fun concat(list: List<@UnsafeVariance A>): List<A> = concat(this, list)
 
     fun dropWhile(p: (A) -> Boolean): List<A> {
         tailrec fun dropWhile_(list: List<A>): List<A> = when (list) {
@@ -78,6 +79,25 @@ sealed class List<A> {
     }
 }
 
+fun sum(list: List<Int>): Int = when (list) {
+    is Nil -> 0
+    is Cons -> list.head + sum(list.tail)
+}
+
+fun product(list: List<Double>): Double = when (list) {
+    is Nil -> 1.0
+    is Cons -> if (list.head == 0.0) 0.0 else list.head * product(list.tail)
+}
+
+fun <A, B> foldRight(list: List<A>, identity: B, f: (A) -> (B) -> B): B =
+        when (list) {
+            is Nil -> identity
+            is Cons -> f(list.head)(foldRight(list.tail, identity, f))
+        }
+
+fun sumFold(list: List<Int>): Int = foldRight(list, 0) { x -> { y -> x + y } }
+fun productFold(list: List<Double>): Double = foldRight(list, 1.0) { x -> { y -> x * y } }
+
 fun main() {
     val list: List<Int> = List(1, 2, 3)
 
@@ -102,6 +122,9 @@ fun main() {
     println(list.concat(list2))
 
     println("Init call: ${List(1, 2, 3).init()}")
+
+    println("Sum: ${sum(list)}")
+    println("Product: ${product(List(1.0, 2.0, 3.0))}")
 
 }
 
