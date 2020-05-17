@@ -169,6 +169,32 @@ sealed class Result<out A> : Serializable {
     }
 }
 
+fun <A, B> lift(f: (A) -> B): (Result<A>) -> Result<B> = { it.map(f) }
+
+fun <A, B, C> lift2(f: (A) -> (B) -> C): (Result<A>) -> (Result<B>) -> Result<C> = { a ->
+    { b ->
+        a.map(f).flatMap {
+            b.map(it)
+        }
+    }
+}
+
+fun <A, B, C, D> lift3(f: (A) -> (B) -> (C) -> D): (Result<A>) -> (Result<B>) -> (Result<C>) -> Result<D> = { a ->
+    { b ->
+        { c ->
+            a.map(f).flatMap {
+                b.map(it)
+            }.flatMap {
+                c.map(it)
+            }
+        }
+    }
+}
+
+fun <A, B, C> map2(a: Result<A>,
+                   b: Result<B>,
+                   f: (A) -> (B) -> C): Result<C> = lift2(f)(a)(b)
+
 fun <K, V> Map<K, V>.getResult(key: K) = when {
     this.containsKey(key) -> Result(this[key])
     else -> Result.Empty
@@ -212,7 +238,27 @@ fun main() {
             onSuccess = { println("$it is even") },
             onEmpty = { println("This one is odd") }
     )
+
+    println(toon1)
+
 }
+
+var createToon: (String) -> (String) -> (String) -> Toon = { x -> { y -> { z -> Toon(x, y, z) } } }
+
+val toon1 = lift3(createToon)(getFirstName())(getLastName())(getMail())
+
+val toonComprehension = getFirstName()
+        .flatMap { firstName ->
+            getLastName().flatMap { lastName ->
+                getMail().map { mail -> Toon(firstName, lastName, mail) }
+            }
+        }
+
+fun getFirstName(): Result<String> = Result("Mickey")
+
+fun getLastName(): Result<String> = Result("Mouse")
+
+fun getMail(): Result<String> = Result("mickey@disney.com")
 
 fun getName(): Result<String> = try {
     validate(readLine())
