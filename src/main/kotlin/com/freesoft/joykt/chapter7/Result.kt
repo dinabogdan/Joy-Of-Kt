@@ -19,6 +19,12 @@ sealed class Result<out A> : Serializable {
 
     abstract fun mapFailure(message: String): Result<A>
 
+    abstract fun forEach(effect: (A) -> Unit)
+
+    abstract fun forEach(onSuccess: (A) -> Unit = {},
+                         onFailure: (RuntimeException) -> Unit = {},
+                         onEmpty: () -> Unit = {})
+
     fun getOrElse(defaultValue: @UnsafeVariance A): A = when (this) {
         is Success -> this.value
         else -> defaultValue
@@ -65,6 +71,11 @@ sealed class Result<out A> : Serializable {
 
         override fun mapFailure(message: String): Result<A> = Failure(RuntimeException(message, exception))
 
+        override fun forEach(effect: (A) -> Unit) {}
+
+        override fun forEach(onSuccess: (A) -> Unit, onFailure: (RuntimeException) -> Unit, onEmpty: () -> Unit) {
+            onFailure(exception)
+        }
     }
 
     internal class Success<out A>(
@@ -91,6 +102,14 @@ sealed class Result<out A> : Serializable {
         override fun toOption(): Option<A> = Option(value)
 
         override fun mapFailure(message: String): Result<A> = this
+
+        override fun forEach(effect: (A) -> Unit) {
+            effect(value)
+        }
+
+        override fun forEach(onSuccess: (A) -> Unit, onFailure: (RuntimeException) -> Unit, onEmpty: () -> Unit) {
+            onSuccess(value)
+        }
     }
 
     internal object Empty : Result<Nothing>() {
@@ -104,6 +123,11 @@ sealed class Result<out A> : Serializable {
 
         override fun mapFailure(message: String): Result<Nothing> = this
 
+        override fun forEach(effect: (Nothing) -> Unit) {}
+
+        override fun forEach(onSuccess: (Nothing) -> Unit, onFailure: (RuntimeException) -> Unit, onEmpty: () -> Unit) {
+            onEmpty()
+        }
     }
 
     companion object {
@@ -179,6 +203,15 @@ fun main() {
             .flatMap { it.email }
 
     println(toon)
+
+    val z = 5
+
+    val result = if (z % 2 == 0) Result(z) else Result()
+
+    result.forEach(
+            onSuccess = { println("$it is even") },
+            onEmpty = { println("This one is odd") }
+    )
 }
 
 fun getName(): Result<String> = try {
