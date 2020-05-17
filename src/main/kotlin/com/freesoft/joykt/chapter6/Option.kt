@@ -92,6 +92,11 @@ val parseWithRadix: (Int) -> (String) -> Int = { radix -> { string -> Integer.pa
 
 val parseHex: (String) -> Int = parseWithRadix(16)
 
+fun <A, B, C> map2(oa: Option<A>,
+                   ob: Option<B>,
+                   f: (A) -> (B) -> C): Option<C> =
+        oa.flatMap { a -> ob.map { b -> f(a)(b) } }
+
 val upperOption: (Option<String>) -> Option<String> = lift { it.toUpperCase() }
 
 fun max(list: List<Int>): Option<Int> = Option(list.max())
