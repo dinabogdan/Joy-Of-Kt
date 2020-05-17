@@ -70,6 +70,30 @@ val variance: (List<Double>) -> Option<Double> = { list ->
     }
 }
 
+fun <A, B> lift(f: (A) -> B): (Option<A>) -> Option<B> = { a -> a.map(f) }
+
+fun <A, B> liftExceptionAware(f: (A) -> B): (Option<A>) -> Option<B> = { a ->
+    try {
+        a.map(f)
+    } catch (ex: Exception) {
+        Option()
+    }
+}
+
+fun <A, B> hLift(f: (A) -> (B)): (A) -> Option<B> = { a ->
+    try {
+        Option(a).map(f)
+    } catch (ex: Exception) {
+        Option()
+    }
+}
+
+val parseWithRadix: (Int) -> (String) -> Int = { radix -> { string -> Integer.parseInt(string, radix) } }
+
+val parseHex: (String) -> Int = parseWithRadix(16)
+
+val upperOption: (Option<String>) -> Option<String> = lift { it.toUpperCase() }
+
 fun max(list: List<Int>): Option<Int> = Option(list.max())
 
 fun getDefault(): Int = throw RuntimeException()
