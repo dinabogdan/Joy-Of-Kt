@@ -1,5 +1,7 @@
 package com.freesoft.joykt.chapter6
 
+import kotlin.math.pow
+
 sealed class Option<out A> {
 
     abstract fun isEmpty(): Boolean
@@ -53,6 +55,21 @@ sealed class Option<out A> {
     }
 }
 
+val mean: (List<Double>) -> Option<Double> = { list ->
+    when {
+        list.isEmpty() -> Option()
+        else -> Option(list.sum() / list.size)
+    }
+}
+
+val variance: (List<Double>) -> Option<Double> = { list ->
+    mean(list).flatMap { m ->
+        mean(list.map { x ->
+            (x - m).pow(2.0)
+        })
+    }
+}
+
 fun max(list: List<Int>): Option<Int> = Option(list.max())
 
 fun getDefault(): Int = throw RuntimeException()
@@ -79,4 +96,7 @@ fun main() {
 //    val none: Option<Int> = Option.Some(f()).orElse { Option.Some(10) }
 
 //    println(none)
+
+
+    println("Variance: ${variance(listOf(1.0, 2.0, 5.0, 7.0, 5.5, 6.0, 8.0, 10.0, 11.4))}")
 }
