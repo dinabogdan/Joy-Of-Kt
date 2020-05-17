@@ -4,6 +4,7 @@ import com.freesoft.joykt.chapter6.Option
 import java.io.IOException
 import java.io.Serializable
 import java.lang.Exception
+import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.lang.NullPointerException
 import java.lang.RuntimeException
@@ -16,6 +17,8 @@ sealed class Result<out A> : Serializable {
 
     abstract fun toOption(): Option<A>
 
+    abstract fun mapFailure(message: String): Result<A>
+
     fun getOrElse(defaultValue: @UnsafeVariance A): A = when (this) {
         is Success -> this.value
         else -> defaultValue
@@ -26,9 +29,9 @@ sealed class Result<out A> : Serializable {
         else -> try {
             defaultValue()
         } catch (ex: RuntimeException) {
-            Result.failure<A>(ex)
+            failure<A>(ex)
         } catch (ex: Exception) {
-            Result.failure<A>(RuntimeException(ex))
+            failure<A>(RuntimeException(ex))
         }
     }
 
@@ -59,6 +62,9 @@ sealed class Result<out A> : Serializable {
         override fun <B> flatMap(f: (A) -> Result<B>): Result<B> = Failure(exception)
 
         override fun toOption(): Option<A> = Option()
+
+        override fun mapFailure(message: String): Result<A> = Failure(RuntimeException(message, exception))
+
     }
 
     internal class Success<out A>(
@@ -83,6 +89,8 @@ sealed class Result<out A> : Serializable {
         }
 
         override fun toOption(): Option<A> = Option(value)
+
+        override fun mapFailure(message: String): Result<A> = this
     }
 
     internal object Empty : Result<Nothing>() {
@@ -93,6 +101,9 @@ sealed class Result<out A> : Serializable {
         override fun toOption(): Option<Nothing> = Option()
 
         override fun toString(): String = "Empty"
+
+        override fun mapFailure(message: String): Result<Nothing> = this
+
     }
 
     companion object {
@@ -103,6 +114,27 @@ sealed class Result<out A> : Serializable {
                 }
 
         operator fun <A> invoke(): Result<A> = Empty
+
+        operator fun <A> invoke(a: A? = null, message: String): Result<A> = when (a) {
+            null -> Failure(NullPointerException(message))
+            else -> Success(a)
+        }
+
+        operator fun <A> invoke(a: A? = null, p: (A) -> Boolean): Result<A> = when (a) {
+            null -> Failure(NullPointerException())
+            else -> when {
+                p(a) -> Success(a)
+                else -> Empty
+            }
+        }
+
+        operator fun <A> invoke(a: A? = null, message: String, p: (A) -> Boolean): Result<A> = when (a) {
+            null -> Failure(NullPointerException())
+            else -> when {
+                p(a) -> Success(a)
+                else -> Failure(IllegalArgumentException("Argument $a does not match condition: $message"))
+            }
+        }
 
         fun <A> failure(message: String): Result<A> = Failure(IllegalStateException(message))
 
