@@ -76,7 +76,7 @@ fun main() {
 
     fun f(): Int? = null
 
-    val none = Option.Some(f()).orElse { Option.Some(10) }
+//    val none: Option<Int> = Option.Some(f()).orElse { Option.Some(10) }
 
-    println(none)
+//    println(none)
 }
