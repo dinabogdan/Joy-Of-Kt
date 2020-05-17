@@ -32,6 +32,22 @@ sealed class Result<out A> : Serializable {
         }
     }
 
+    fun filter(p: (A) -> Boolean): Result<A> = flatMap {
+        if (p(it))
+            this
+        else
+            failure("Condition not matched")
+    }
+
+    fun filter(message: String, p: (A) -> Boolean): Result<A> = flatMap {
+        if (p(it))
+            this
+        else
+            failure(message)
+    }
+
+    fun exists(p: (A) -> Boolean): Boolean = map(p).getOrElse(false)
+
     internal class Failure<out A>(
             internal val exception: RuntimeException
     ) : Result<A>() {
