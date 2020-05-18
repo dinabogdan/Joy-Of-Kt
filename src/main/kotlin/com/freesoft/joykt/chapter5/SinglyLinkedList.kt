@@ -100,6 +100,20 @@ sealed class List<out A> {
                 }
             }.first
 
+    fun splitAt(index: Int): Pair<List<A>, List<A>> {
+        tailrec fun splitAt(acc: List<A>, list: List<A>, i: Int): Pair<List<A>, List<A>> =
+                when (list) {
+                    Nil -> Pair(list.reverse(), acc)
+                    is Cons -> if (i == 0) Pair(list.reverse(), acc) else splitAt(acc.cons(list.head), list.tail, i - 1)
+                }
+
+        return when {
+            index < 0 -> splitAt(0)
+            index > length() -> splitAt(length())
+            else -> splitAt(Nil, this.reverse(), this.length() - index)
+        }
+    }
+
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -237,6 +251,7 @@ fun main() {
     println("Product: ${product(List(1.0, 2.0, 3.0))}")
 
     println("Length of $list is ${list.length()}")
+
 
 }
 
