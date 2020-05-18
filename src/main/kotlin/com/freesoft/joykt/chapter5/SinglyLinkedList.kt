@@ -7,6 +7,8 @@ sealed class List<out A> {
 
     abstract fun isEmpty(): Boolean
 
+    abstract fun lengthMemoized(): Int
+
     fun cons(a: @UnsafeVariance A): List<A> = Cons(a, this)
 
     fun setHead(a: @UnsafeVariance A): List<A> = when (this) {
@@ -68,15 +70,22 @@ sealed class List<out A> {
         override fun isEmpty(): Boolean = true
 
         override fun toString(): String = "[NIL]"
+
+        override fun lengthMemoized(): Int = 0
     }
 
     internal class Cons<A>(
             internal val head: A,
             internal val tail: List<A>
     ) : List<A>() {
+
+        private val length: Int = tail.lengthMemoized() + 1
+
         override fun isEmpty(): Boolean = false
 
         override fun toString(): String = "[${toString("", this)}NIL]"
+
+        override fun lengthMemoized(): Int = length
 
         private tailrec fun toString(acc: String, list: List<A>): String =
                 when (list) {
