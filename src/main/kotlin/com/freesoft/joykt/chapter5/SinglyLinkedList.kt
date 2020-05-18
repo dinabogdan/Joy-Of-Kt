@@ -135,6 +135,14 @@ sealed class List<out A> {
         return startsWith(this, sub)
     }
 
+    fun <B> groupBy(f: (A) -> B): Map<B, List<A>> = reverse().foldLeft(mapOf()) { mt: Map<B, List<A>> ->
+        { t ->
+            f(t).let {
+                mt + (it to (mt.getOrDefault(it, Nil)).cons(t))
+            }
+        }
+    }
+    
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
