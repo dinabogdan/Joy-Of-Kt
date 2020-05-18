@@ -114,6 +114,27 @@ sealed class List<out A> {
         }
     }
 
+    fun hasSubList(sub: List<@UnsafeVariance A>): Boolean {
+        tailrec fun <A> hasSubList(list: List<A>, sub: List<A>): Boolean =
+                when (list) {
+                    is Nil -> sub.isEmpty()
+                    is Cons -> if (list.startsWith(sub)) true else hasSubList(list.tail, sub)
+                }
+        return hasSubList(this, sub)
+    }
+
+    fun startsWith(sub: List<@UnsafeVariance A>): Boolean {
+        tailrec fun startsWith(list: List<A>, sub: List<A>): Boolean =
+                when (sub) {
+                    is Nil -> true
+                    is Cons -> when (list) {
+                        is Nil -> false
+                        is Cons -> if (list.head == sub.head) startsWith(list.tail, sub.tail) else false
+                    }
+                }
+        return startsWith(this, sub)
+    }
+
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -252,6 +273,7 @@ fun main() {
 
     println("Length of $list is ${list.length()}")
 
+    println("Has subList: ${List(1, 2, 3, 4).hasSubList(List(3, 4))}")
 
 }
 
