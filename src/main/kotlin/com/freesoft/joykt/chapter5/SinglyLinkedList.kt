@@ -14,6 +14,8 @@ sealed class List<out A> {
 
     abstract fun lastSafe(): Result<A>
 
+    abstract fun <B> foldLeft(identity: B, zero: B, f: (B) -> (A) -> B): B
+
     fun cons(a: @UnsafeVariance A): List<A> = Cons(a, this)
 
     fun setHead(a: @UnsafeVariance A): List<A> = when (this) {
@@ -108,6 +110,8 @@ sealed class List<out A> {
         override fun headSafe(): Result<Nothing> = Result()
 
         override fun lastSafe(): Result<Nothing> = Result()
+
+        override fun <B> foldLeft(identity: B, zero: B, f: (B) -> (Nothing) -> B): B = identity
     }
 
     internal class Cons<A>(
@@ -126,6 +130,14 @@ sealed class List<out A> {
         override fun headSafe(): Result<A> = Result(head)
 
         override fun lastSafe(): Result<A> = foldLeft(Result()) { { y: A -> Result(y) } }
+
+        override fun <B> foldLeft(identity: B, zero: B, f: (B) -> (A) -> B): B {
+            fun <B> foldLeft(acc: B, zero: B, list: List<A>, f: (B) -> (A) -> B): B = when (list) {
+                is Nil -> acc
+                is Cons -> if (acc == zero) acc else foldLeft(f(acc)(list.head), zero, list.tail, f)
+            }
+            return foldLeft(identity, zero, this, f)
+        }
 
         private tailrec fun toString(acc: String, list: List<A>): String =
                 when (list) {
