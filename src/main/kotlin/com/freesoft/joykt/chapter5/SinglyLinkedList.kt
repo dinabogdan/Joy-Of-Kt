@@ -3,6 +3,9 @@ package com.freesoft.joykt.chapter5
 import com.freesoft.joykt.chapter5.List.Cons
 import com.freesoft.joykt.chapter5.List.Nil
 import com.freesoft.joykt.chapter7.Result
+import java.lang.RuntimeException
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
 
 sealed class List<out A> {
 
@@ -166,6 +169,26 @@ sealed class List<out A> {
 
         return if (this.isEmpty()) List(this) else divide(List(this), depth)
     }
+
+    fun <B> parFoldLeft(executor: ExecutorService, identity: B, f: (B) -> (A) -> B, m: (B) -> (B) -> B): Result<B> =
+            try {
+                val result: List<B> = divide(1024).map { list: List<A> ->
+                    executor.submit<B> { list.foldLeft(identity, f) }
+                }.map<B> { fb ->
+                    try {
+                        fb.get()
+                    } catch (e: InterruptedException) {
+                        throw RuntimeException(e)
+                    } catch (e: ExecutionException) {
+                        throw RuntimeException(e)
+                    }
+                }
+                Result(result.foldLeft(identity, m))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+
+
 
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
