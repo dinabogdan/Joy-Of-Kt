@@ -2,12 +2,17 @@ package com.freesoft.joykt.chapter5
 
 import com.freesoft.joykt.chapter5.List.Cons
 import com.freesoft.joykt.chapter5.List.Nil
+import com.freesoft.joykt.chapter7.Result
 
 sealed class List<out A> {
 
     abstract fun isEmpty(): Boolean
 
     abstract fun lengthMemoized(): Int
+
+    abstract fun headSafe(): Result<A>
+
+    abstract fun lastSafe(): Result<A>
 
     fun cons(a: @UnsafeVariance A): List<A> = Cons(a, this)
 
@@ -72,6 +77,10 @@ sealed class List<out A> {
         override fun toString(): String = "[NIL]"
 
         override fun lengthMemoized(): Int = 0
+
+        override fun headSafe(): Result<Nothing> = Result()
+
+        override fun lastSafe(): Result<Nothing> = Result()
     }
 
     internal class Cons<A>(
@@ -86,6 +95,10 @@ sealed class List<out A> {
         override fun toString(): String = "[${toString("", this)}NIL]"
 
         override fun lengthMemoized(): Int = length
+
+        override fun headSafe(): Result<A> = Result(head)
+
+        override fun lastSafe(): Result<A> = foldLeft(Result()) { { y: A -> Result(y) } }
 
         private tailrec fun toString(acc: String, list: List<A>): String =
                 when (list) {
