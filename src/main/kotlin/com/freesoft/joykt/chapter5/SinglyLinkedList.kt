@@ -71,6 +71,33 @@ sealed class List<out A> {
 
     fun <B> flatMap(f: (A) -> List<B>): List<B> = flatten(map(f))
 
+    fun <A1, A2> unzip(f: (A) -> Pair<A1, A2>): Pair<List<A1>, List<A2>> =
+            this.coFoldRight(Pair(Nil, Nil)) { a ->
+                { listPair: Pair<List<A1>, List<A2>> ->
+                    val pair = f(a)
+                    Pair(listPair.first.cons(pair.first), listPair.second.cons(pair.second))
+                }
+            }
+
+    fun getAt(index: Int): Result<A> {
+        tailrec fun <A> getAt(list: List<A>, index: Int): Result<A> =
+                when (list) {
+                    Nil -> Result.failure("Dead code. Should never execute.")
+                    is Cons -> if (index == 0) Result(list.head) else getAt(list.tail, index - 1)
+                }
+        return if (index < 0 || index >= length()) Result.failure("Index out of bound") else getAt(this, index)
+    }
+
+    fun getAtViaFoldLeft(index: Int): Result<A> =
+            Pair(Result.failure<A>("Index out of bound"), index).let {
+                if (index < 0 || index >= length()) it else foldLeft(it) { ta ->
+                    { a ->
+                        if (ta.second < 0) ta else Pair(Result(a), ta.second - 1)
+                    }
+
+                }
+            }.first
+
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
