@@ -142,7 +142,31 @@ sealed class List<out A> {
             }
         }
     }
-    
+
+    fun splitListAt(index: Int): List<List<A>> {
+        tailrec fun splitListAt(acc: List<A>, list: List<A>, i: Int): List<List<A>> =
+                when (list) {
+                    is Nil -> List(list.reverse(), acc)
+                    is Cons -> if (i == 0) List(list.reverse(), acc) else splitListAt(acc.cons(list.head), list.tail, i - 1)
+                }
+        return when {
+            index < 0 -> splitListAt(0)
+            index > length() -> splitListAt(length())
+            else -> splitListAt(Nil, this.reverse(), this.length() - index)
+        }
+    }
+
+    fun divide(depth: Int): List<List<A>> {
+        tailrec fun divide(list: List<List<A>>, depth: Int): List<List<A>> =
+                when (list) {
+                    is Nil -> list
+                    is Cons -> if (list.head.length() < 2 || depth < 1) list else
+                        divide(list.flatMap { x -> x.splitListAt(x.length() / 2) }, depth - 1)
+                }
+
+        return if (this.isEmpty()) List(this) else divide(List(this), depth)
+    }
+
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
