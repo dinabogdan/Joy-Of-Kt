@@ -25,6 +25,8 @@ sealed class Result<out A> : Serializable {
                          onFailure: (RuntimeException) -> Unit = {},
                          onEmpty: () -> Unit = {})
 
+    abstract fun isEmpty(): Boolean
+
     fun getOrElse(defaultValue: @UnsafeVariance A): A = when (this) {
         is Success -> this.value
         else -> defaultValue
@@ -76,6 +78,8 @@ sealed class Result<out A> : Serializable {
         override fun forEach(onSuccess: (A) -> Unit, onFailure: (RuntimeException) -> Unit, onEmpty: () -> Unit) {
             onFailure(exception)
         }
+
+        override fun isEmpty(): Boolean = false
     }
 
     internal class Success<out A>(
@@ -110,6 +114,8 @@ sealed class Result<out A> : Serializable {
         override fun forEach(onSuccess: (A) -> Unit, onFailure: (RuntimeException) -> Unit, onEmpty: () -> Unit) {
             onSuccess(value)
         }
+
+        override fun isEmpty(): Boolean = false
     }
 
     internal object Empty : Result<Nothing>() {
@@ -128,6 +134,8 @@ sealed class Result<out A> : Serializable {
         override fun forEach(onSuccess: (Nothing) -> Unit, onFailure: (RuntimeException) -> Unit, onEmpty: () -> Unit) {
             onEmpty()
         }
+
+        override fun isEmpty(): Boolean = true
     }
 
     companion object {
