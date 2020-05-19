@@ -2,6 +2,7 @@ package com.freesoft.joykt.chapter9
 
 import java.lang.IllegalStateException
 import kotlin.random.Random
+import com.freesoft.joykt.chapter5.List
 
 class Lazy<out A>(function: () -> A) : () -> A {
     private val value: A by lazy(function)
@@ -24,6 +25,8 @@ class Lazy<out A>(function: () -> A) : () -> A {
                 }
     }
 }
+
+fun <A> sequence(list: List<Lazy<A>>): Lazy<List<A>> = Lazy { list.map { it() } }
 
 fun <A, B, C> lift2(f: (A) -> (B) -> C): (Lazy<A>) -> (Lazy<B>) -> Lazy<C> =
         { lz1 ->
@@ -107,5 +110,28 @@ fun main() {
 
     println(if (condition) message() else lazyDefaultMessage())
     println(if (condition) message() else lazyDefaultMessage())
+
+    val name1 = Lazy {
+        println("Evaluating name1")
+        "John"
+    }
+
+    val name2 = Lazy {
+        println("Evaluating name2")
+        "Jane"
+    }
+
+    val name3 = Lazy {
+        println("Evaluating name3")
+        "Joe"
+    }
+
+    val list = sequence(List(name1, name2, name3))
+    val eagerDefaultMessage = "No greetings when time is odd"
+
+    println("Lazy + List")
+
+    println(if (condition) list() else eagerDefaultMessage)
+    println(if (condition) list() else eagerDefaultMessage)
 
 }
