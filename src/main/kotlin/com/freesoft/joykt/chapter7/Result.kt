@@ -174,6 +174,14 @@ sealed class Result<out A> : Serializable {
 
         fun <A> failure(exception: Exception): Result<A> = Failure(IllegalStateException(exception))
 
+        fun <A> of(f: () -> A): Result<A> =
+                try {
+                    Result(f())
+                } catch (e: RuntimeException) {
+                    Result.failure(e)
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
     }
 }
 

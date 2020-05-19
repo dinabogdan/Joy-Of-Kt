@@ -3,6 +3,9 @@ package com.freesoft.joykt.chapter9
 import java.lang.IllegalStateException
 import kotlin.random.Random
 import com.freesoft.joykt.chapter5.List
+import com.freesoft.joykt.chapter8.sequence
+import com.freesoft.joykt.chapter7.Result
+import com.freesoft.joykt.chapter7.map2
 
 class Lazy<out A>(function: () -> A) : () -> A {
     private val value: A by lazy(function)
@@ -32,6 +35,9 @@ fun <A, B, C> lift2(f: (A) -> (B) -> C): (Lazy<A>) -> (Lazy<B>) -> Lazy<C> =
         { lz1 ->
             { lz2 -> Lazy { f(lz1())(lz2()) } }
         }
+
+fun <A> sequenceResult(list: List<Lazy<A>>): Lazy<Result<List<A>>> =
+        Lazy { sequence(list.map { Result.of(it) }) }
 
 fun or(a: Lazy<Boolean>, b: Lazy<Boolean>): Boolean = if (a()) true else b()
 
