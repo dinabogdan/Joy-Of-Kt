@@ -10,6 +10,10 @@ class Lazy<out A>(function: () -> A) : () -> A {
 
     override fun toString(): String = "$value"
 
+    fun <B> map(f: (A) -> B): Lazy<B> = Lazy { f(value) }
+
+    fun <B> flatMap(f: (A) -> Lazy<B>): Lazy<B> = f(value)
+
     companion object {
 
         val lift2: ((String) -> (String) -> String) -> (Lazy<String>) -> (Lazy<String>) -> Lazy<String> =
@@ -57,6 +61,11 @@ val lazyName: Lazy<String> = Lazy {
     "Mickey"
 }
 
+val lazyDefaultMessage = Lazy {
+    println("Lazy Evaluating default message")
+    "No greetings when time is odd"
+}
+
 val consMessage: (String) -> (String) -> String =
         { greetings ->
             { name -> "$greetings, $name!" }
@@ -92,5 +101,11 @@ fun main() {
     // the following println() will not evaluate the lazyGreetings and lazyName if the condition is not true
     println(if (condition) println(lazyCurriedMessage) else "No greetings when time is odd")
 
+    val greets: (String) -> String = { "Hello, $it" }
+
+    val message = lazyName.map(greets)
+
+    println(if (condition) message() else lazyDefaultMessage())
+    println(if (condition) message() else lazyDefaultMessage())
 
 }
