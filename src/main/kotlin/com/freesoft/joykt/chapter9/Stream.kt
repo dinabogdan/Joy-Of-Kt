@@ -1,7 +1,7 @@
 package com.freesoft.joykt.chapter9
 
-import com.freesoft.joykt.chapter7.Result
 import com.freesoft.joykt.chapter5.List
+import com.freesoft.joykt.chapter7.Result
 
 sealed class Stream<out A> {
     abstract fun isEmpty(): Boolean
@@ -9,10 +9,15 @@ sealed class Stream<out A> {
     abstract fun tail(): Result<Stream<A>>
     abstract fun takeAtMost(n: Int): Stream<A>
     abstract fun dropAtMost(n: Int): Stream<A>
+    abstract fun takeWhile(p: (A) -> Boolean): Stream<A>
+    abstract fun dropWhile(p: (A) -> Boolean): Stream<A>
+
+    abstract fun exists(p: (A) -> Boolean): Boolean
 
     fun <A> repeat(f: () -> A): Stream<A> = cons(Lazy { f() }, Lazy { repeat(f) })
 
     fun toList(): List<A> = Companion.toList(this)
+
 
     private object Empty : Stream<Nothing>() {
         override fun isEmpty(): Boolean = true
@@ -24,6 +29,12 @@ sealed class Stream<out A> {
         override fun takeAtMost(n: Int): Stream<Nothing> = this
 
         override fun dropAtMost(n: Int): Stream<Nothing> = this
+
+        override fun takeWhile(p: (Nothing) -> Boolean): Stream<Nothing> = this
+
+        override fun dropWhile(p: (Nothing) -> Boolean): Stream<Nothing> = this
+
+        override fun exists(p: (Nothing) -> Boolean): Boolean = false
     }
 
     private class Cons<out A>(
@@ -42,6 +53,25 @@ sealed class Stream<out A> {
         }
 
         override fun dropAtMost(n: Int): Stream<A> = Companion.dropAtMost(n, this)
+
+        override fun takeWhile(p: (A) -> Boolean): Stream<A> = when {
+            p(_head()) -> cons(_head, Lazy { _tail().takeWhile(p) })
+            else -> Empty
+        }
+
+        override fun dropWhile(p: (A) -> Boolean): Stream<A> {
+            tailrec fun <A> dropWhile_(stream: Stream<A>, p: (A) -> Boolean): Stream<A> =
+                    when (stream) {
+                        is Empty -> stream
+                        is Cons -> when {
+                            p(stream._head()) -> dropWhile_(stream._tail(), p)
+                            else -> stream
+                        }
+                    }
+            return dropWhile_(this, p)
+        }
+
+        override fun exists(p: (A) -> Boolean): Boolean = Companion.exists(this, p)
     }
 
     companion object {
@@ -50,7 +80,10 @@ sealed class Stream<out A> {
 
         operator fun <A> invoke(): Stream<A> = Empty
 
-        fun from(i: Int): Stream<Int> = cons(Lazy { i }, Lazy { from(i + 1) })
+        fun <A> iterate(seed: A, f: (A) -> A): Stream<A> =
+                cons(Lazy { seed }, Lazy { iterate(f(seed), f) })
+
+        fun from(i: Int): Stream<Int> = iterate(i) { it + 1 }
 
         tailrec fun <A> dropAtMost(n: Int, stream: Stream<A>): Stream<A> = when {
             n > 0 -> when (stream) {
@@ -68,6 +101,15 @@ sealed class Stream<out A> {
                     }
             return toList_(List(), stream).reverse()
         }
+
+        tailrec fun <A> exists(stream: Stream<A>, p: (A) -> Boolean): Boolean =
+                when (stream) {
+                    is Empty -> false
+                    is Cons -> when {
+                        p(stream._head()) -> true
+                        else -> exists(stream._tail(), p)
+                    }
+                }
     }
 }
 
@@ -87,4 +129,17 @@ fun main() {
 
     val stream = Stream.from(0).dropAtMost(60_000).takeAtMost(60_000)
     println(stream.toList())
+
+    fun inc(i: Int): Int = (i + 1).let {
+        println("generating $it")
+        it
+    }
+
+    val list = Stream.iterate(0, ::inc)
+            .takeAtMost(60_000)
+            .dropAtMost(10_000)
+            .takeAtMost(10)
+            .toList()
+
+    println(list)
 }
