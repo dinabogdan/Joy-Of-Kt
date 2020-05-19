@@ -18,6 +18,21 @@ class Lazy<out A>(function: () -> A) : () -> A {
 
     fun <B> flatMap(f: (A) -> Lazy<B>): Lazy<B> = f(value)
 
+    fun forEach(condition: Boolean,
+                ifTrue: (A) -> Unit,
+                ifFalse: () -> Unit = {}) =
+            if (condition) ifTrue(value) else ifFalse()
+
+    fun forEach(condition: Boolean,
+                ifTrue: () -> Unit = {},
+                ifFalse: (A) -> Unit) =
+            if (condition) ifTrue() else ifFalse(value)
+
+    fun forEach(condition: Boolean,
+                ifTrue: (A) -> Unit,
+                ifFalse: (A) -> Unit) =
+            if (condition) ifTrue(value) else ifFalse(value)
+
     companion object {
 
         val lift2: ((String) -> (String) -> String) -> (Lazy<String>) -> (Lazy<String>) -> Lazy<String> =

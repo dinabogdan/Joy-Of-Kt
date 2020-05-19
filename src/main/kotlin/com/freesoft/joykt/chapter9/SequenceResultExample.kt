@@ -37,4 +37,7 @@ fun main() {
     println(if (condition) list2() else defaultMessage)
     println(if (condition) list2() else defaultMessage)
 
+    val printMessage: (Any) -> Unit = ::println
+    val printDefault: () -> Unit = { println(defaultMessage) }
+    list1.forEach(condition, printMessage, printDefault)
 }
