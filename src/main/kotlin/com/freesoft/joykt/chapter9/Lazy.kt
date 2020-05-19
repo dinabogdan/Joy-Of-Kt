@@ -18,9 +18,13 @@ class Lazy<out A>(function: () -> A) : () -> A {
                         { lz2 -> Lazy { f(lz1())(lz2()) } }
                     }
                 }
-
     }
 }
+
+fun <A, B, C> lift2(f: (A) -> (B) -> C): (Lazy<A>) -> (Lazy<B>) -> Lazy<C> =
+        { lz1 ->
+            { lz2 -> Lazy { f(lz1())(lz2()) } }
+        }
 
 fun or(a: Lazy<Boolean>, b: Lazy<Boolean>): Boolean = if (a()) true else b()
 
