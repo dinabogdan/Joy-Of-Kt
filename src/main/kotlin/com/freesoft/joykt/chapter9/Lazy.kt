@@ -17,6 +17,11 @@ fun constructMessage(greetings: String, name: String): String = "$greetings, $na
 
 fun lazyConstructMessage(greetings: Lazy<String>, name: Lazy<String>): Lazy<String> = Lazy { "${greetings()}, ${name()}!" }
 
+val lazyCurriedConstructMessage: (Lazy<String>) -> (Lazy<String>) -> Lazy<String> =
+        { greetings ->
+            { name -> Lazy { "${greetings()}, ${name()}!" } }
+        }
+
 fun greetings(): String {
     println("Eager Evaluating greetings")
     return "Hello"
@@ -55,6 +60,7 @@ fun main() {
 
     val lazyMessage = lazyConstructMessage(lazyGreetings, lazyName)
     val eagerMessage = constructMessage(greetings(), name())
+    val lazyCurriedMessage = lazyCurriedConstructMessage(lazyGreetings)(lazyName)
     val condition = Random(System.currentTimeMillis()).nextInt() % 2 == 0
 
     // the following println() will call the greetings() and name() function even if the condition is not true
@@ -62,5 +68,9 @@ fun main() {
 
     // the following println() will not evaluate the lazyGreetings and lazyName if the condition is not true
     println(if (condition) println(lazyMessage) else "No greetings when time is odd")
+
+    // the following println() will not evaluate the lazyGreetings and lazyName if the condition is not true
+    println(if (condition) println(lazyCurriedMessage) else "No greetings when time is odd")
+
 
 }
