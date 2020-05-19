@@ -9,6 +9,17 @@ class Lazy<out A>(function: () -> A) : () -> A {
     override operator fun invoke(): A = value
 
     override fun toString(): String = "$value"
+
+    companion object {
+
+        val lift2: ((String) -> (String) -> String) -> (Lazy<String>) -> (Lazy<String>) -> Lazy<String> =
+                { f ->
+                    { lz1 ->
+                        { lz2 -> Lazy { f(lz1())(lz2()) } }
+                    }
+                }
+
+    }
 }
 
 fun or(a: Lazy<Boolean>, b: Lazy<Boolean>): Boolean = if (a()) true else b()
@@ -41,6 +52,11 @@ val lazyName: Lazy<String> = Lazy {
     println("Lazy computing name")
     "Mickey"
 }
+
+val consMessage: (String) -> (String) -> String =
+        { greetings ->
+            { name -> "$greetings, $name!" }
+        }
 
 fun main() {
 
