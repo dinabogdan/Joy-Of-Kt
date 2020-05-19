@@ -1,6 +1,7 @@
 package com.freesoft.joykt.chapter9
 
 import com.freesoft.joykt.chapter7.Result
+import com.freesoft.joykt.chapter5.List
 
 sealed class Stream<out A> {
     abstract fun isEmpty(): Boolean
@@ -10,6 +11,8 @@ sealed class Stream<out A> {
     abstract fun dropAtMost(n: Int): Stream<A>
 
     fun <A> repeat(f: () -> A): Stream<A> = cons(Lazy { f() }, Lazy { repeat(f) })
+
+    fun toList(): List<A> = Companion.toList(this)
 
     private object Empty : Stream<Nothing>() {
         override fun isEmpty(): Boolean = true
@@ -56,20 +59,32 @@ sealed class Stream<out A> {
             }
             else -> stream
         }
+
+        fun <A> toList(stream: Stream<A>): List<A> {
+            tailrec fun <A> toList_(list: List<A>, stream: Stream<A>): List<A> =
+                    when (stream) {
+                        is Empty -> list
+                        is Cons -> toList_(list.cons(stream._head()), stream._tail())
+                    }
+            return toList_(List(), stream).reverse()
+        }
     }
 }
 
 fun main() {
-    val stream = Stream.from(1)
+//    val stream = Stream.from(1)
+//
+//    stream.head().forEach({ println(it) })
+//    stream.tail()
+//            .flatMap { it.head() }
+//            .forEach({ println(it) })
+//    stream.tail()
+//            .flatMap {
+//                it.tail().flatMap {
+//                    it.head()
+//                }
+//            }.forEach({ println(it) })
 
-    stream.head().forEach({ println(it) })
-    stream.tail()
-            .flatMap { it.head() }
-            .forEach({ println(it) })
-    stream.tail()
-            .flatMap {
-                it.tail().flatMap {
-                    it.head()
-                }
-            }.forEach({ println(it) })
+    val stream = Stream.from(0).dropAtMost(60_000).takeAtMost(60_000)
+    println(stream.toList())
 }
