@@ -42,6 +42,11 @@ sealed class Stream<out A> {
                 { b: Lazy<Stream<A>> -> cons(Lazy { a }, b) }
             }
 
+    fun <B> flatMap(f: (A) -> Stream<B>): Stream<B> =
+            foldRight(Lazy { Empty as Stream<B> }) { a ->
+                { b: Lazy<Stream<B>> -> f(a).append(b) }
+            }
+
     private object Empty : Stream<Nothing>() {
         override fun isEmpty(): Boolean = true
 
