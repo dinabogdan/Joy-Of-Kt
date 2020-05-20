@@ -19,6 +19,13 @@ sealed class Stream<out A> {
 
     fun toList(): List<A> = Companion.toList(this)
 
+    fun headSafeViaFoldRight(): Result<A> =
+            foldRight(Lazy { Result<A>() }) { a: A -> { Result(a) } }
+
+    fun <B> map(f: (A) -> B): Stream<B> =
+            foldRight(Lazy { Empty }) { a ->
+                { b: Lazy<Stream<B>> -> cons(Lazy { f(a) }, b) }
+            }
 
     private object Empty : Stream<Nothing>() {
         override fun isEmpty(): Boolean = true
@@ -178,4 +185,8 @@ fun main() {
             }
 
     println("The resList is: $resList")
+
+    val head = resList.headSafe()
+
+    println("The head is: $head")
 }
