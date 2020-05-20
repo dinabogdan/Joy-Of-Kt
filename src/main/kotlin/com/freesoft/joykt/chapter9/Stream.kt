@@ -47,6 +47,8 @@ sealed class Stream<out A> {
                 { b: Lazy<Stream<B>> -> f(a).append(b) }
             }
 
+    fun find(p: (A) -> Boolean): Result<A> = filter(p).head()
+
     private object Empty : Stream<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -128,7 +130,9 @@ sealed class Stream<out A> {
         fun <A> iterate(seed: A, f: (A) -> A): Stream<A> =
                 cons(Lazy { seed }, Lazy { iterate(f(seed), f) })
 
-        fun from(i: Int): Stream<Int> = iterate(i) { it + 1 }
+//        fun from(i: Int): Stream<Int> = iterate(i) { it + 1 }
+
+        fun from(n: Int): Stream<Int> = unfold(n) { x -> Result(x to x + 1) }
 
         tailrec fun <A> dropAtMost(n: Int, stream: Stream<A>): Stream<A> = when {
             n > 0 -> when (stream) {
@@ -155,6 +159,11 @@ sealed class Stream<out A> {
                         else -> exists(stream._tail(), p)
                     }
                 }
+
+        fun <A, S> unfold(z: S, f: (S) -> Result<Pair<A, S>>): Stream<A> =
+                f(z).map { x ->
+                    cons(Lazy { x.first }, Lazy { unfold(x.second, f) })
+                }.getOrElse(Empty)
     }
 }
 
