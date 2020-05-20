@@ -11,8 +11,8 @@ sealed class Stream<out A> {
     abstract fun dropAtMost(n: Int): Stream<A>
     abstract fun takeWhile(p: (A) -> Boolean): Stream<A>
     abstract fun dropWhile(p: (A) -> Boolean): Stream<A>
-
     abstract fun exists(p: (A) -> Boolean): Boolean
+    abstract fun <B> foldRight(z: Lazy<B>, f: (A) -> (Lazy<B>) -> B): B
 
     fun <A> repeat(f: () -> A): Stream<A> = cons(Lazy { f() }, Lazy { repeat(f) })
 
@@ -35,6 +35,8 @@ sealed class Stream<out A> {
         override fun dropWhile(p: (Nothing) -> Boolean): Stream<Nothing> = this
 
         override fun exists(p: (Nothing) -> Boolean): Boolean = false
+
+        override fun <B> foldRight(z: Lazy<B>, f: (Nothing) -> (Lazy<B>) -> B): B = z()
     }
 
     private class Cons<out A>(
@@ -72,6 +74,9 @@ sealed class Stream<out A> {
         }
 
         override fun exists(p: (A) -> Boolean): Boolean = Companion.exists(this, p)
+
+        override fun <B> foldRight(z: Lazy<B>, f: (A) -> (Lazy<B>) -> B): B =
+                f(_head())(Lazy { _tail().foldRight(z, f) })
     }
 
     companion object {
