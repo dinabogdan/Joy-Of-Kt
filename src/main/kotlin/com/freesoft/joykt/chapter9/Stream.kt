@@ -13,6 +13,7 @@ sealed class Stream<out A> {
     abstract fun dropWhile(p: (A) -> Boolean): Stream<A>
     abstract fun exists(p: (A) -> Boolean): Boolean
     abstract fun <B> foldRight(z: Lazy<B>, f: (A) -> (Lazy<B>) -> B): B
+    abstract fun takeWhileViaFoldRight(p: (A) -> Boolean): Stream<A>
 
     fun <A> repeat(f: () -> A): Stream<A> = cons(Lazy { f() }, Lazy { repeat(f) })
 
@@ -37,6 +38,8 @@ sealed class Stream<out A> {
         override fun exists(p: (Nothing) -> Boolean): Boolean = false
 
         override fun <B> foldRight(z: Lazy<B>, f: (Nothing) -> (Lazy<B>) -> B): B = z()
+
+        override fun takeWhileViaFoldRight(p: (Nothing) -> Boolean): Stream<Nothing> = this
     }
 
     private class Cons<out A>(
@@ -77,6 +80,16 @@ sealed class Stream<out A> {
 
         override fun <B> foldRight(z: Lazy<B>, f: (A) -> (Lazy<B>) -> B): B =
                 f(_head())(Lazy { _tail().foldRight(z, f) })
+
+        override fun takeWhileViaFoldRight(p: (A) -> Boolean): Stream<A> =
+                foldRight(Lazy { Empty }) { a ->
+                    { b: Lazy<Stream<A>> ->
+                        if (p(a))
+                            cons(Lazy { a }, b)
+                        else
+                            Empty
+                    }
+                }
     }
 
     companion object {
@@ -147,4 +160,22 @@ fun main() {
             .toList()
 
     println(list)
+
+    val result = Stream.iterate(0, ::inc)
+            .takeAtMost(100)
+            .foldRight(Lazy { 0 }) { a ->
+                { lz -> a + lz() }
+            }
+
+    println(result)
+
+    val resList = Stream.iterate(0, ::inc)
+            .takeAtMost(50)
+            .foldRight(Lazy { List<Int>() }) { a: Int ->
+                { lz: Lazy<List<Int>> ->
+                    lz().cons(a)
+                }
+            }
+
+    println("The resList is: $resList")
 }
