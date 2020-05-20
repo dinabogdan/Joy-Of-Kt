@@ -27,6 +27,21 @@ sealed class Stream<out A> {
                 { b: Lazy<Stream<B>> -> cons(Lazy { f(a) }, b) }
             }
 
+    fun filter(p: (A) -> Boolean): Stream<A> =
+            foldRight(Lazy { Empty }) { a ->
+                { b: Lazy<Stream<A>> ->
+                    if (p(a))
+                        cons(Lazy { a }, b)
+                    else
+                        b()
+                }
+            }
+
+    fun append(stream2: Lazy<Stream<@UnsafeVariance A>>): Stream<A> =
+            this.foldRight(stream2) { a: A ->
+                { b: Lazy<Stream<A>> -> cons(Lazy { a }, b) }
+            }
+
     private object Empty : Stream<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -189,4 +204,19 @@ fun main() {
     val head = resList.headSafe()
 
     println("The head is: $head")
+
+    val stream1 = Stream.iterate(0, ::inc)
+            .takeAtMost(10)
+            .dropAtMost(5)
+
+    println("Stream1: ${stream1.toList()}")
+
+    val appendResult = Stream.iterate(0, ::inc)
+            .takeAtMost(5)
+            .append(Lazy {
+                stream1
+            }).toList()
+
+    println("AppendResult: $appendResult")
+
 }
