@@ -23,6 +23,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
                                f: (A) -> (B) -> B,
                                g: (B) -> (B) -> B): B
 
+    abstract fun <B> foldInOrder(identity: B, f: (B) -> (A) -> (B) -> B): B
+    abstract fun <B> foldPreOrder(identity: B, f: (A) -> (B) -> (B) -> B): B
+    abstract fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (A) -> B): B
+
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
         is T -> when {
@@ -85,6 +89,12 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun <B> foldLeft(identity: B, f: (B) -> (Nothing) -> B, g: (B) -> (B) -> B): B = identity
 
         override fun <B> foldRight(identity: B, f: (Nothing) -> (B) -> B, g: (B) -> (B) -> B): B = identity
+
+        override fun <B> foldInOrder(identity: B, f: (B) -> (Nothing) -> (B) -> B): B = identity
+
+        override fun <B> foldPreOrder(identity: B, f: (Nothing) -> (B) -> (B) -> B): B = identity
+
+        override fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (Nothing) -> B): B = identity
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
@@ -124,6 +134,15 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
         override fun <B> foldRight(identity: B, f: (A) -> (B) -> B, g: (B) -> (B) -> B): B =
                 g(f(this.value)(left.foldRight(identity, f, g)))(right.foldRight(identity, f, g))
+
+        override fun <B> foldInOrder(identity: B, f: (B) -> (A) -> (B) -> B): B =
+                f(left.foldInOrder(identity, f))(value)(right.foldInOrder(identity, f))
+
+        override fun <B> foldPreOrder(identity: B, f: (A) -> (B) -> (B) -> B): B =
+                f(value)(left.foldPreOrder(identity, f))(right.foldPreOrder(identity, f))
+
+        override fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (A) -> B): B =
+                f(left.foldPostOrder(identity, f))(right.foldPostOrder(identity, f))(value)
     }
 
     companion object {
