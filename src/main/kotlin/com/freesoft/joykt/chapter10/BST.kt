@@ -24,6 +24,26 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         }
     }
 
+    fun removeMerge(ta: Tree<@UnsafeVariance A>): Tree<A> = when (this) {
+        is Empty -> ta
+        is T -> when (ta) {
+            is Empty -> this
+            is T -> when {
+                ta.value < value -> T(left.removeMerge(ta), value, right)
+                else -> T(left, value, right.removeMerge(ta))
+            }
+        }
+    }
+
+    fun remove(a: @UnsafeVariance A): Tree<A> = when (this) {
+        is Empty -> this
+        is T -> when {
+            a < value -> T(left.remove(a), value, right)
+            a > value -> T(left, value, right.remove(a))
+            else -> left.removeMerge(right)
+        }
+    }
+
     operator fun plus(element: @UnsafeVariance A): Tree<A> = when (this) {
         is Empty -> T(Empty, element, Empty)
         is T -> when {
@@ -94,6 +114,7 @@ fun main() {
     val tree = Tree<Int>() + 5 + 2 + 8
 
     println(tree)
+    println("Tree after removing ${tree.remove(5)}")
 
     val treeFromVararg = Tree(1, 2, 3, 4)
 
@@ -101,7 +122,9 @@ fun main() {
 
     val treeFromList = Tree(List(1, 2, 3, 4))
 
-    println(treeFromList)
+    println("Tree from list:  $treeFromList")
+
+    println("Tree from list after removing root: ")
 
     println(tree.size())
     println(treeFromVararg.size())
@@ -112,5 +135,6 @@ fun main() {
 
     println("The max of tree is: ${tree.max()}")
     println("The min of tree is: ${tree.min()}")
+
 
 }
