@@ -65,6 +65,15 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         }
     }
 
+    fun <B : Comparable<B>> map(f: (A) -> B): Tree<B> =
+            foldInOrder(Empty) { t1: Tree<B> ->
+                { i: A ->
+                    { t2: Tree<B> ->
+                        Tree(t1, f(i), t2)
+                    }
+                }
+            }
+
     internal object Empty : Tree<Nothing>() {
 
         override val size: Int
@@ -154,8 +163,37 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         operator fun <A : Comparable<A>> invoke(az: List<A>): Tree<A> =
                 az.foldLeft(Empty as Tree<A>) { tree: Tree<A> -> { a: A -> tree.plus(a) } }
 
+        operator fun <A : Comparable<A>> invoke(left: Tree<A>, a: A, right: Tree<A>): Tree<A> =
+                when {
+                    ordered(left, a, right) -> T(left, a, right)
+                    ordered(right, a, left) -> T(right, a, left)
+                    else -> Tree(a).merge(left).merge(right)
+                }
+
     }
 }
+
+fun <A : Comparable<A>> lt(first: A, second: A): Boolean = first < second
+fun <A : Comparable<A>> lt(first: A, second: A, third: A): Boolean = lt(first, second) && lt(second, third)
+
+fun <A : Comparable<A>> ordered(left: Tree<A>, a: A, right: Tree<A>): Boolean =
+        (left.max().flatMap { leftMax ->
+            right.min().map { rightMin -> lt(leftMax, a, rightMin) }
+        }.getOrElse(left.isEmpty() && right.isEmpty()) ||
+                left.min().mapEmpty()
+                        .flatMap {
+                            right.min().map { rightMin ->
+                                lt(a, rightMin)
+                            }
+                        }.getOrElse(false) ||
+                right.min()
+                        .mapEmpty()
+                        .flatMap {
+                            left.max().map { leftMax ->
+                                lt(leftMax, a)
+                            }
+                        }.getOrElse(false)
+                )
 
 fun main() {
 

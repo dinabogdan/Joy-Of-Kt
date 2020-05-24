@@ -27,6 +27,8 @@ sealed class Result<out A> : Serializable {
 
     abstract fun isEmpty(): Boolean
 
+    abstract fun mapEmpty(): Result<Any>
+
     fun getOrElse(defaultValue: @UnsafeVariance A): A = when (this) {
         is Success -> this.value
         else -> defaultValue
@@ -80,6 +82,8 @@ sealed class Result<out A> : Serializable {
         }
 
         override fun isEmpty(): Boolean = false
+
+        override fun mapEmpty(): Result<Any> = failure(this.exception)
     }
 
     internal class Success<out A>(
@@ -116,6 +120,8 @@ sealed class Result<out A> : Serializable {
         }
 
         override fun isEmpty(): Boolean = false
+
+        override fun mapEmpty(): Result<Any> = failure("Not empty")
     }
 
     internal object Empty : Result<Nothing>() {
@@ -136,6 +142,8 @@ sealed class Result<out A> : Serializable {
         }
 
         override fun isEmpty(): Boolean = true
+
+        override fun mapEmpty(): Result<Any> = Result(Any())
     }
 
     companion object {
