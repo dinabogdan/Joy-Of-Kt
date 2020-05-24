@@ -2,7 +2,9 @@ package com.freesoft.joykt.chapter10
 
 import com.freesoft.joykt.chapter5.List
 import com.freesoft.joykt.chapter7.Result
+import java.lang.IllegalStateException
 import java.lang.Integer.max
+import kotlin.math.abs
 
 sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
@@ -31,6 +33,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
     protected abstract fun rotateLeft(): Tree<A>
 
     abstract fun toListInOrderRight(): List<A>
+
+    internal abstract val value: A
+    internal abstract val left: Tree<A>
+    internal abstract val right: Tree<A>
 
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
@@ -115,12 +121,19 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun rotateLeft(): Tree<Nothing> = this
 
         override fun toListInOrderRight(): List<Nothing> = List.Nil
+
+        override val value: Nothing
+            get() = throw IllegalStateException("No value in Empty")
+        override val left: Tree<Nothing>
+            get() = throw IllegalStateException("No left in Empty")
+        override val right: Tree<Nothing>
+            get() = throw IllegalStateException("No right in Empty")
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
-            internal val left: Tree<A>,
-            internal val value: A,
-            internal val right: Tree<A>
+            override val left: Tree<A>,
+            override val value: A,
+            override val right: Tree<A>
     ) : Tree<A>() {
 
         override val size: Int
@@ -202,6 +215,49 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
                     ordered(right, a, left) -> T(right, a, left)
                     else -> Tree(a).merge(left).merge(right)
                 }
+
+        fun <A> unfold(a: A, f: (A) -> Result<A>): A {
+            tailrec fun <A> unfold_(a: Pair<Result<A>, Result<A>>,
+                                    f: (A) -> Result<A>): Pair<Result<A>, Result<A>> {
+                val x = a.second.flatMap { f(it) }
+                return when (x) {
+                    is Result.Success -> unfold_(Pair(a.second, x), f)
+                    else -> a
+                }
+            }
+            return Result(a).let { unfold_(Pair(it, it), f).second.getOrElse(a) }
+        }
+
+        fun <A : Comparable<A>> isUnBalanced(tree: Tree<A>): Boolean =
+                when (tree) {
+                    is Empty -> false
+                    is T -> abs(tree.left.height - tree.right.height) > (tree.size - 1) % 2
+                }
+
+        fun <A : Comparable<A>> balance(tree: Tree<A>): Tree<A> =
+                balanceHelper(tree.toListInOrderRight()
+                        .foldLeft(Empty) { t: Tree<A> ->
+                            { a: A -> T(Empty, a, t) }
+                        })
+
+        fun <A : Comparable<A>> balanceHelper(tree: Tree<A>): Tree<A> = when {
+            !tree.isEmpty() && tree.height > log2nlz(tree.size) -> when {
+                abs(tree.left.height - tree.right.height) > 1 -> balanceHelper(balanceFirstLevel(tree))
+                else -> T(balanceHelper(tree.left), tree.value, balanceHelper(tree.right))
+            }
+            else -> tree
+        }
+
+        private fun <A : Comparable<A>> balanceFirstLevel(tree: Tree<A>): Tree<A> =
+                unfold(tree) { t: Tree<A> ->
+                    when {
+                        isUnBalanced(t) -> when {
+                            tree.right.height > tree.left.height -> Result(t.rotateLeft())
+                            else -> Result(t.rotateRight())
+                        }
+                        else -> Result()
+                    }
+                }
     }
 }
 
@@ -226,6 +282,11 @@ fun <A : Comparable<A>> ordered(left: Tree<A>, a: A, right: Tree<A>): Boolean =
                             }
                         }.getOrElse(false)
                 )
+
+fun log2nlz(n: Int) = when (n) {
+    0 -> 0
+    else -> 31 - Integer.numberOfLeadingZeros(n)
+}
 
 fun main() {
 
