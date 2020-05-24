@@ -15,6 +15,13 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract fun min(): Result<A>
     abstract fun max(): Result<A>
     abstract fun merge(tree: Tree<@UnsafeVariance A>): Tree<A>
+    abstract fun <B> foldLeft(identity: B,
+                              f: (B) -> (A) -> B,
+                              g: (B) -> (B) -> B): B
+
+    abstract fun <B> foldRight(identity: B,
+                               f: (A) -> (B) -> B,
+                               g: (B) -> (B) -> B): B
 
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
@@ -74,6 +81,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun max(): Result<Nothing> = Result.Empty
 
         override fun merge(tree: Tree<Nothing>): Tree<Nothing> = tree
+
+        override fun <B> foldLeft(identity: B, f: (B) -> (Nothing) -> B, g: (B) -> (B) -> B): B = identity
+
+        override fun <B> foldRight(identity: B, f: (Nothing) -> (B) -> B, g: (B) -> (B) -> B): B = identity
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
@@ -107,6 +118,12 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
                 else -> T(left.merge(tree.left), value, right.merge(tree.right))
             }
         }
+
+        override fun <B> foldLeft(identity: B, f: (B) -> (A) -> B, g: (B) -> (B) -> B): B =
+                g(right.foldLeft(identity, f, g))(f(left.foldLeft(identity, f, g))(this.value))
+
+        override fun <B> foldRight(identity: B, f: (A) -> (B) -> B, g: (B) -> (B) -> B): B =
+                g(f(this.value)(left.foldRight(identity, f, g)))(right.foldRight(identity, f, g))
     }
 
     companion object {
