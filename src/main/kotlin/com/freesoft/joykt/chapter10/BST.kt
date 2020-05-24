@@ -14,6 +14,7 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract fun height(): Int
     abstract fun min(): Result<A>
     abstract fun max(): Result<A>
+    abstract fun merge(tree: Tree<@UnsafeVariance A>): Tree<A>
 
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
@@ -71,6 +72,8 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun min(): Result<Nothing> = Result.Empty
 
         override fun max(): Result<Nothing> = Result.Empty
+
+        override fun merge(tree: Tree<Nothing>): Tree<Nothing> = tree
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
@@ -95,6 +98,15 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun min(): Result<A> = left.min().orElse { Result(value) }
 
         override fun max(): Result<A> = right.max().orElse { Result(value) }
+
+        override fun merge(tree: Tree<@UnsafeVariance A>): Tree<A> = when (tree) {
+            is Empty -> this
+            is T -> when {
+                tree.value > this.value -> T(left, value, right.merge(T(Empty, tree.value, tree.right))).merge(tree.left)
+                tree.value < this.value -> T(left.merge(T(tree.left, tree.value, Empty)), value, right).merge(tree.right)
+                else -> T(left.merge(tree.left), value, right.merge(tree.right))
+            }
+        }
     }
 
     companion object {
