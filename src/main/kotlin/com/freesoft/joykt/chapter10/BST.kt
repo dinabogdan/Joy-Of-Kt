@@ -27,8 +27,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract fun <B> foldPreOrder(identity: B, f: (A) -> (B) -> (B) -> B): B
     abstract fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (A) -> B): B
 
-    protected abstract fun rotateRight(): Tree<A>
+    abstract fun rotateRight(): Tree<A>
     protected abstract fun rotateLeft(): Tree<A>
+
+    abstract fun toListInOrderRight(): List<A>
 
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
@@ -111,6 +113,8 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun rotateRight(): Tree<Nothing> = this
 
         override fun rotateLeft(): Tree<Nothing> = this
+
+        override fun toListInOrderRight(): List<Nothing> = List.Nil
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
@@ -169,6 +173,18 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
             is Empty -> this
             is T -> T(T(left, value, right.left), right.value, right.right)
         }
+
+        override fun toListInOrderRight(): List<A> {
+            tailrec fun <A : Comparable<A>> unBalanceRight(acc: List<A>, tree: Tree<A>): List<A> =
+                    when (tree) {
+                        is Empty -> acc
+                        is T -> when (tree.left) {
+                            is Empty -> unBalanceRight(acc.cons(tree.value), tree.right)
+                            is T -> unBalanceRight(acc, tree.rotateRight())
+                        }
+                    }
+            return unBalanceRight(List(), this)
+        }
     }
 
     companion object {
@@ -186,7 +202,6 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
                     ordered(right, a, left) -> T(right, a, left)
                     else -> Tree(a).merge(left).merge(right)
                 }
-
     }
 }
 
