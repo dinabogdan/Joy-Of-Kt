@@ -6,6 +6,15 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
     abstract fun isEmpty(): Boolean
 
+    fun contains(a: @UnsafeVariance A): Boolean = when (this) {
+        is Empty -> false
+        is T -> when {
+            a < value -> left.contains(a)
+            a > value -> right.contains(a)
+            else -> value == a
+        }
+    }
+    
     operator fun plus(element: @UnsafeVariance A): Tree<A> = when (this) {
         is Empty -> T(Empty, element, Empty)
         is T -> when {
