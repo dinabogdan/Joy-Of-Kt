@@ -1,6 +1,7 @@
 package com.freesoft.joykt.chapter10
 
 import com.freesoft.joykt.chapter5.List
+import com.freesoft.joykt.chapter7.Result
 import java.lang.Integer.max
 
 sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
@@ -9,10 +10,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract val height: Int
 
     abstract fun isEmpty(): Boolean
-
     abstract fun size(): Int
-
     abstract fun height(): Int
+    abstract fun min(): Result<A>
+    abstract fun max(): Result<A>
 
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
@@ -46,6 +47,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun size(): Int = 0
 
         override fun height(): Int = -1
+
+        override fun min(): Result<Nothing> = Result.Empty
+
+        override fun max(): Result<Nothing> = Result.Empty
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
@@ -63,9 +68,13 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
         override fun toString(): String = "(T $left $value $right)"
 
-        override fun size(): Int = 1 + this.left.size() + this.right.size()
+        override fun size(): Int = this.size
 
-        override fun height(): Int = 1 + max(this.left.height(), this.right.size())
+        override fun height(): Int = this.height
+
+        override fun min(): Result<A> = left.min().orElse { Result(value) }
+
+        override fun max(): Result<A> = right.max().orElse { Result(value) }
     }
 
     companion object {
@@ -100,5 +109,8 @@ fun main() {
     println(tree.height())
 
     println(treeFromList.height())
+
+    println("The max of tree is: ${tree.max()}")
+    println("The min of tree is: ${tree.min()}")
 
 }
