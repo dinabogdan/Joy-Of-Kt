@@ -27,6 +27,9 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract fun <B> foldPreOrder(identity: B, f: (A) -> (B) -> (B) -> B): B
     abstract fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (A) -> B): B
 
+    protected abstract fun rotateRight(): Tree<A>
+    protected abstract fun rotateLeft(): Tree<A>
+
     fun contains(a: @UnsafeVariance A): Boolean = when (this) {
         is Empty -> false
         is T -> when {
@@ -104,6 +107,10 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override fun <B> foldPreOrder(identity: B, f: (Nothing) -> (B) -> (B) -> B): B = identity
 
         override fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (Nothing) -> B): B = identity
+
+        override fun rotateRight(): Tree<Nothing> = this
+
+        override fun rotateLeft(): Tree<Nothing> = this
     }
 
     internal class T<out A : Comparable<@kotlin.UnsafeVariance A>>(
@@ -152,6 +159,16 @@ sealed class Tree<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
         override fun <B> foldPostOrder(identity: B, f: (B) -> (B) -> (A) -> B): B =
                 f(left.foldPostOrder(identity, f))(right.foldPostOrder(identity, f))(value)
+
+        override fun rotateRight(): Tree<A> = when (left) {
+            is Empty -> this
+            is T -> T(left.left, left.value, T(left.right, value, right))
+        }
+
+        override fun rotateLeft(): Tree<A> = when (right) {
+            is Empty -> this
+            is T -> T(T(left, value, right.left), right.value, right.right)
+        }
     }
 
     companion object {
