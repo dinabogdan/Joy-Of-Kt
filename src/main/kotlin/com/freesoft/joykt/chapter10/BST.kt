@@ -315,5 +315,4 @@ fun main() {
     println("The max of tree is: ${tree.max()}")
     println("The min of tree is: ${tree.min()}")
 
-
 }
