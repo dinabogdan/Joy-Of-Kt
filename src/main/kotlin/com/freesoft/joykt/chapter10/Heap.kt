@@ -13,6 +13,8 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract val size: Int
     abstract val isEmpty: Boolean
 
+    operator fun plus(element: @UnsafeVariance A): Heap<A> = merge(this, Heap(element))
+
     abstract class Empty<out A : Comparable<@kotlin.UnsafeVariance A>> : Heap<A>() {
         override val left: Result<Heap<A>> = Result(E)
         override val right: Result<Heap<A>> = Result(E)
@@ -27,8 +29,8 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
     internal class H<out A : Comparable<@kotlin.UnsafeVariance A>>(
             override val rank: Int,
             private val _left: Heap<A>,
-            private val _right: Heap<A>,
-            private val _head: A
+            private val _head: A,
+            private val _right: Heap<A>
     ) : Heap<A>() {
 
         override val left: Result<Heap<A>> = Result(_left)
@@ -40,5 +42,34 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
     companion object {
         operator fun <A : Comparable<A>> invoke(): Heap<A> = E
+
+        operator fun <A : Comparable<A>> invoke(element: A): Heap<A> = H(1, E, element, E)
+
+        fun <A : Comparable<A>> merge(first: Heap<A>, second: Heap<A>): Heap<A> =
+                first.head.flatMap { fh ->
+                    second.head.flatMap { sh ->
+                        when {
+                            fh <= sh -> first.left.flatMap { fl ->
+                                first.right.map { fr ->
+                                    merge(fh, fl, merge(fr, second))
+                                }
+                            }
+                            else -> second.left.flatMap { sl ->
+                                second.right.map { sr ->
+                                    merge(sh, sl, merge(first, sr))
+                                }
+                            }
+                        }
+                    }
+                }.getOrElse(when (first) {
+                    E -> second
+                    else -> first
+                })
+
+        fun <A : Comparable<A>> merge(head: A, first: Heap<A>, second: Heap<A>): Heap<A> =
+                when {
+                    first.rank >= second.rank -> H(second.rank + 1, first, head, second)
+                    else -> H(first.rank + 1, second, head, first)
+                }
     }
 }
