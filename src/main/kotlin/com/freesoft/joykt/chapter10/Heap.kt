@@ -1,6 +1,8 @@
 package com.freesoft.joykt.chapter10
 
+import com.freesoft.joykt.chapter6.Option
 import com.freesoft.joykt.chapter7.Result
+import com.freesoft.joykt.chapter5.List
 import java.lang.IllegalStateException
 import java.util.NoSuchElementException
 
@@ -17,6 +19,14 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
     abstract fun tail(): Result<Heap<A>>
     abstract fun get(index: Int): Result<A>
+    abstract fun pop(): Option<Pair<A, Heap<A>>>
+
+    fun <B> foldLeft(identity: B, f: (B) -> (A) -> B): B = unfold(this, { it.pop() }, identity, f)
+    fun toList(): List<A> = this.foldLeft(List<A>()) { list ->
+        { a ->
+            list.cons(a)
+        }
+    }.reverse()
 
     operator fun plus(element: @UnsafeVariance A): Heap<A> = merge(this, Heap(element))
 
@@ -30,6 +40,7 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
         override fun tail(): Result<Heap<A>> = Result.failure(IllegalStateException("tail() called on empty heap"))
         override fun get(index: Int): Result<A> = Result.failure(NoSuchElementException("Index out of bounds"))
+        override fun pop(): Option<Pair<A, Heap<A>>> = Option()
     }
 
     internal object E : Empty<Nothing>()
@@ -52,6 +63,8 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
             0 -> Result(_head)
             else -> tail().flatMap { heap -> heap.get(index - 1) }
         }
+
+        override fun pop(): Option<Pair<A, Heap<A>>> = Option(Pair(_head, merge(_left, _right)))
     }
 
     companion object {
@@ -85,5 +98,19 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
                     first.rank >= second.rank -> H(second.rank + 1, first, head, second)
                     else -> H(first.rank + 1, second, head, first)
                 }
+
+        fun <A, S, B> unfold(z: S,
+                             getNext: (S) -> Option<Pair<A, S>>,
+                             identity: B,
+                             f: (B) -> (A) -> B): B {
+            tailrec fun unfold(acc: B, z: S): B {
+                val next = getNext(z)
+                return when (next) {
+                    is Option.None -> acc
+                    is Option.Some -> unfold(f(acc)(next.value.first), next.value.second)
+                }
+            }
+            return unfold(identity, z)
+        }
     }
 }
