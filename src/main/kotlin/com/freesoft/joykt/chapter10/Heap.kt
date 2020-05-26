@@ -1,6 +1,8 @@
 package com.freesoft.joykt.chapter10
 
 import com.freesoft.joykt.chapter7.Result
+import java.lang.IllegalStateException
+import java.util.NoSuchElementException
 
 sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
 
@@ -13,6 +15,9 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
     abstract val size: Int
     abstract val isEmpty: Boolean
 
+    abstract fun tail(): Result<Heap<A>>
+    abstract fun get(index: Int): Result<A>
+
     operator fun plus(element: @UnsafeVariance A): Heap<A> = merge(this, Heap(element))
 
     abstract class Empty<out A : Comparable<@kotlin.UnsafeVariance A>> : Heap<A>() {
@@ -22,6 +27,9 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override val rank: Int = 0
         override val size: Int = 0
         override val isEmpty: Boolean = true
+
+        override fun tail(): Result<Heap<A>> = Result.failure(IllegalStateException("tail() called on empty heap"))
+        override fun get(index: Int): Result<A> = Result.failure(NoSuchElementException("Index out of bounds"))
     }
 
     internal object E : Empty<Nothing>()
@@ -38,6 +46,12 @@ sealed class Heap<out A : Comparable<@kotlin.UnsafeVariance A>> {
         override val head: Result<A> = Result(_head)
         override val size: Int = _left.size + _right.size + 1
         override val isEmpty: Boolean = false
+
+        override fun tail(): Result<Heap<A>> = Result(merge(_left, _right))
+        override fun get(index: Int): Result<A> = when (index) {
+            0 -> Result(_head)
+            else -> tail().flatMap { heap -> heap.get(index - 1) }
+        }
     }
 
     companion object {
