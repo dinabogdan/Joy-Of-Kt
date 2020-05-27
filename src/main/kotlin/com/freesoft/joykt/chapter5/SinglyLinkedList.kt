@@ -19,6 +19,8 @@ sealed class List<out A> {
 
     abstract fun <B> foldLeft(identity: B, zero: B, f: (B) -> (A) -> B): B
 
+    abstract fun forEach(effect: (A) -> Unit)
+
     fun cons(a: @UnsafeVariance A): List<A> = Cons(a, this)
 
     fun setHead(a: @UnsafeVariance A): List<A> = when (this) {
@@ -189,7 +191,6 @@ sealed class List<out A> {
             }
 
 
-
     internal object Nil : List<Nothing>() {
         override fun isEmpty(): Boolean = true
 
@@ -202,6 +203,8 @@ sealed class List<out A> {
         override fun lastSafe(): Result<Nothing> = Result()
 
         override fun <B> foldLeft(identity: B, zero: B, f: (B) -> (Nothing) -> B): B = identity
+
+        override fun forEach(effect: (Nothing) -> Unit) {}
     }
 
     internal class Cons<A>(
@@ -227,6 +230,20 @@ sealed class List<out A> {
                 is Cons -> if (acc == zero) acc else foldLeft(f(acc)(list.head), zero, list.tail, f)
             }
             return foldLeft(identity, zero, this, f)
+        }
+
+        override fun forEach(effect: (A) -> Unit) {
+            tailrec fun forEach(list: List<A>) {
+                when (list) {
+                    is Nil -> {
+                    }
+                    is Cons -> {
+                        effect(list.head)
+                        forEach(list.tail)
+                    }
+                }
+            }
+            forEach(this)
         }
 
         private tailrec fun toString(acc: String, list: List<A>): String =
