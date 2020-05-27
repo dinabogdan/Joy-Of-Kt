@@ -1,7 +1,9 @@
 package com.freesoft.joykt.chapter12
 
 import java.io.Closeable
+import com.freesoft.joykt.chapter5.List
 import com.freesoft.joykt.chapter7.Result
+import com.freesoft.joykt.chapter9.Stream
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -65,6 +67,23 @@ class ConsoleReader(reader: BufferedReader) : AbstractReader(reader) {
     }
 }
 
+data class Person(val id: Int, val firstName: String, val lastName: String)
+
+fun person(input: Input): Result<Pair<Person, Input>> = input.readInt("Enter ID:")
+        .flatMap { id ->
+            id.second.readString("Enter first name:")
+                    .flatMap { firstName ->
+                        firstName.second.readString("Enter last name:")
+                                .map { lastName ->
+                                    Pair(Person(id.first,
+                                            firstName.first,
+                                            lastName.first), lastName.second)
+                                }
+                    }
+        }
+
+fun readPersonsFromConsole(): List<Person> = Stream.unfold(ConsoleReader(), ::person).toList()
+
 fun main() {
     val input = ConsoleReader()
 
@@ -79,4 +98,6 @@ fun main() {
     val ageMessage = rInt.map { "You look younger than $it!" }
 
     ageMessage.forEach(::println, onFailure = { println("Invalid age. Please enter an integer") })
+
+    readPersonsFromConsole().forEach(::println)
 }
