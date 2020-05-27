@@ -5,6 +5,7 @@ import com.freesoft.joykt.chapter5.List
 import com.freesoft.joykt.chapter7.Result
 import com.freesoft.joykt.chapter9.Stream
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 
 interface Input : Closeable {
@@ -84,20 +85,52 @@ fun person(input: Input): Result<Pair<Person, Input>> = input.readInt("Enter ID:
 
 fun readPersonsFromConsole(): List<Person> = Stream.unfold(ConsoleReader(), ::person).toList()
 
+class FileReader private constructor(
+        private val reader: BufferedReader
+) : AbstractReader(reader), AutoCloseable {
+
+    override fun close() {
+        reader.close()
+    }
+
+    companion object {
+        operator fun invoke(path: String): Result<Input> = try {
+            Result(
+                    FileReader(
+                            File(path).bufferedReader()
+                    )
+            )
+        } catch (ex: Exception) {
+            Result.failure(ex)
+        }
+    }
+}
+
+fun readPersonsFromFile(path: String): Result<List<Person>> =
+        FileReader(path).map {
+            it.use {
+                Stream.unfold(it, ::person).toList()
+            }
+        }
+
 fun main() {
-    val input = ConsoleReader()
+//    val input = ConsoleReader()
+//
+//    val rString = input.readString("Enter your name:").map { t -> t.first }
+//
+//    val nameMessage = rString.map { "Hello $it!" }
+//
+//    nameMessage.forEach(::println, onFailure = { println(it.message) })
+//
+//    val rInt = input.readInt("Enter your age: ").map { t -> t.first }
+//
+//    val ageMessage = rInt.map { "You look younger than $it!" }
+//
+//    ageMessage.forEach(::println, onFailure = { println("Invalid age. Please enter an integer") })
+//
+//    readPersonsFromConsole().forEach(::println)
 
-    val rString = input.readString("Enter your name:").map { t -> t.first }
+    val path = "C:\\Users\\HR11MD\\workspace\\the-joy-of-kt\\src\\main\\kotlin\\com\\freesoft\\joykt\\data.txt"
 
-    val nameMessage = rString.map { "Hello $it!" }
-
-    nameMessage.forEach(::println, onFailure = { println(it.message) })
-
-    val rInt = input.readInt("Enter your age: ").map { t -> t.first }
-
-    val ageMessage = rInt.map { "You look younger than $it!" }
-
-    ageMessage.forEach(::println, onFailure = { println("Invalid age. Please enter an integer") })
-
-    readPersonsFromConsole().forEach(::println)
+    readPersonsFromFile(path).forEach({ list: List<Person> -> list.forEach(::println) }, onFailure = ::println)
 }
