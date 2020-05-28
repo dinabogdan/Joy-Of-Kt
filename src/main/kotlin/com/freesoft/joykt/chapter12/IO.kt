@@ -127,7 +127,7 @@ object Console {
 
     fun printLine(s: Any): IO<Unit> = IO.Suspend { println(s) }
 
-    fun print(s: Any): IO<Unit> = IO.Suspend { print(s) }
+    fun print(s: Any): IO<Unit> = IO.Suspend<Unit> { print(s) }
 }
 
 fun show(message: String): IO<Unit> = Console.printLine(message)
