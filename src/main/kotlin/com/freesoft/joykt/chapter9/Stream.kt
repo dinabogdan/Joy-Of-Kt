@@ -164,6 +164,16 @@ sealed class Stream<out A> {
                 f(z).map { x ->
                     cons(Lazy { x.first }, Lazy { unfold(x.second, f) })
                 }.getOrElse(Empty)
+
+        fun <A> fill(n: Int, elem: Lazy<A>): Stream<A> {
+            tailrec fun <A> fill(acc: Stream<A>, n: Int, elem: Lazy<A>): Stream<A> =
+                    when {
+                        n <= 0 -> acc
+                        else -> fill(Cons(elem, Lazy { acc }), n - 1, elem)
+                    }
+
+            return fill(Empty, n, elem)
+        }
     }
 }
 

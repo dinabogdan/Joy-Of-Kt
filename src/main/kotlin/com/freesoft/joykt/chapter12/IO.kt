@@ -2,6 +2,10 @@ package com.freesoft.joykt.chapter12
 
 import com.freesoft.joykt.chapter5.List
 import com.freesoft.joykt.chapter7.Result
+import com.freesoft.joykt.chapter9.Lazy
+import com.freesoft.joykt.chapter9.Stream
+import com.freesoft.joykt.chapter9.Stream.Companion.cons
+import com.freesoft.joykt.chapter9.Stream.Companion.toList
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -23,6 +27,26 @@ class IO<out A>(private val effect: () -> A) {
 
     companion object {
         val empty: IO<Unit> = IO {}
+
+        fun <A, B, C> map2(ioA: IO<A>, ioB: IO<B>, f: (A) -> (B) -> C): IO<C> = ioA.flatMap { a ->
+            ioB.map { b -> f(a)(b) }
+        }
+
+        fun <A> repeat(n: Int, io: IO<A>): IO<List<A>> {
+            val stream: Stream<IO<A>> = Stream.fill(n, Lazy { io })
+            val f: (A) -> (List<A>) -> List<A> = { a ->
+                { la: List<A> -> List.Cons(a, la) }
+            }
+            val g: (IO<A>) -> (Lazy<IO<List<A>>>) -> IO<List<A>> =
+                    { ioa ->
+                        { sioLa ->
+                            map2(ioa, sioLa(), f)
+                        }
+                    }
+            val z: Lazy<IO<List<A>>> = Lazy { IO { List<A>() } }
+            return stream.foldRight(z, g)
+        }
+
 
         operator fun <A> invoke(a: A): IO<A> = IO { a }
     }
