@@ -5,9 +5,15 @@ import com.freesoft.joykt.chapter7.Result
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.lang.IllegalStateException
 
 class IO<out A>(private val effect: () -> A) {
+
+    fun <B> map(g: (A) -> B): IO<B> = IO { g(this()) }
+
+    fun <B> flatMap(g: (A) -> IO<B>): IO<B> = IO {
+        g(this())()
+    }
+
     operator fun invoke() = effect()
 
     operator fun plus(io: IO<@UnsafeVariance A>): IO<A> = IO {
@@ -30,7 +36,7 @@ object Console {
         try {
             Result(br.readLine())
         } catch (ex: IOException) {
-            Result.failure(ex)
+            Result.failure<String>(ex)
         }
     }
 
@@ -62,16 +68,34 @@ val instruction3 = IO { print("!\n") }
 
 val script: IO<Unit> = instruction1 + instruction2 + instruction3
 
+private fun sayHello(): IO<Unit> = Console.print("Enter your name: ")
+        .map { Console.readln()() }
+        .map { "Hello, ${it.getOrElse("")}!" }
+        .map { Console.println(it)() }
+
+private fun sayFunctionalHellO(): IO<Unit> = Console.print("Enter your name: ")
+        .flatMap { Console.readln() }
+        .map { "Hello, ${it.getOrElse("")}!" }
+        .flatMap { Console.println(it) }
+
 fun main() {
+//    script()
+//
+//    val imperativeScript = List(
+//            IO { print("Hello, ") },
+//            IO { print(getName()) },
+//            IO { print("!\n") }
+//    )
+//
+//    val program = imperativeScript.foldRight(IO.empty) { io -> { io + it } }
+//
+//    program()
+
+//    val script = sayHello()
+
+    val script = sayFunctionalHellO()
+
     script()
 
-    val imperativeScript = List(
-            IO { print("Hello, ") },
-            IO { print(getName()) },
-            IO { print("!\n") }
-    )
 
-    val program = imperativeScript.foldRight(IO.empty) { io -> { io + it } }
-
-    program()
 }
