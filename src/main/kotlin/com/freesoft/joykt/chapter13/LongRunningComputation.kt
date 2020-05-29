@@ -1,13 +1,16 @@
 package com.freesoft.joykt.chapter13
 
 import com.freesoft.joykt.chapter5.List
+import com.freesoft.joykt.chapter5.range
 import com.freesoft.joykt.chapter7.Result
 import com.freesoft.joykt.chapter8.sequence
+import java.util.concurrent.Semaphore
 
 class Worker(id: String) : AbstractActor<Int>(id) {
     override fun onReceive(message: Int, sender: Result<Actor<Int>>) {
         sender.forEach(
-                onSuccess = { a: Actor<Int> -> a.tell(slowFibonacci(message), self()) }
+                onSuccess = { a: Actor<Int> ->
+                    a.tell(slowFibonacci(message), self()) }
         )
     }
 
@@ -96,6 +99,39 @@ class Manager(
     }
 }
 
-fun main() {
+private val semaphore = Semaphore(1)
+private const val listLength = 20_000
+private const val workers = 4
+private val random = java.util.Random(0)
+private val testList = range(0, listLength).map { random.nextInt(35) }
 
+private fun processSuccess(list: List<Int>) {
+    println("Input: ${testList.splitAt(40).first}")
+    println("Result: ${list.splitAt(40).first}")
+}
+
+private fun processFailure(message: String) {
+    println(message)
+}
+
+fun main() {
+    semaphore.acquire()
+
+    val startTime = System.currentTimeMillis()
+
+    val client = object : AbstractActor<Result<List<Int>>>("Client") {
+        override fun onReceive(message: Result<List<Int>>, sender: Result<Actor<Result<List<Int>>>>) {
+            message.forEach(
+                    onSuccess = { processSuccess(it) },
+                    onFailure = { processFailure(it.message ?: "Unkown error") }
+            )
+
+            println("Total time: ${(System.currentTimeMillis() - startTime)}")
+            semaphore.release()
+        }
+    }
+
+    val manager = Manager("Manager", testList, client, workers)
+    manager.start()
+    semaphore.acquire()
 }
