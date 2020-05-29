@@ -2,6 +2,7 @@ package com.freesoft.joykt.chapter5
 
 import com.freesoft.joykt.chapter5.List.Cons
 import com.freesoft.joykt.chapter5.List.Nil
+import com.freesoft.joykt.chapter6.Option
 import com.freesoft.joykt.chapter7.Result
 import java.lang.RuntimeException
 import java.util.concurrent.ExecutionException
@@ -20,6 +21,8 @@ sealed class List<out A> {
     abstract fun <B> foldLeft(identity: B, zero: B, f: (B) -> (A) -> B): B
 
     abstract fun forEach(effect: (A) -> Unit)
+
+    abstract fun tailSafe(): Result<List<A>>
 
     fun cons(a: @UnsafeVariance A): List<A> = Cons(a, this)
 
@@ -49,6 +52,10 @@ sealed class List<out A> {
                 }
         return drop(n, this)
     }
+
+
+    fun zipWithPosition(): List<Pair<A, Int>> =
+            zipWith(this, range(0, this.length())) { a -> { i: Int -> Pair(a, i) } }
 
     fun concat(list: List<@UnsafeVariance A>): List<A> = concat(this, list)
 
@@ -205,6 +212,9 @@ sealed class List<out A> {
         override fun <B> foldLeft(identity: B, zero: B, f: (B) -> (Nothing) -> B): B = identity
 
         override fun forEach(effect: (Nothing) -> Unit) {}
+
+        override fun tailSafe(): Result<List<Nothing>> = Result.Empty
+
     }
 
     internal class Cons<A>(
@@ -231,6 +241,8 @@ sealed class List<out A> {
             }
             return foldLeft(identity, zero, this, f)
         }
+
+        override fun tailSafe(): Result<List<A>> = Result(tail)
 
         override fun forEach(effect: (A) -> Unit) {
             tailrec fun forEach(list: List<A>) {
@@ -292,6 +304,44 @@ sealed class List<out A> {
         fun <A> flatten(list: List<List<A>>): List<A> = list.foldRight(Nil) { x -> x::concat }
     }
 }
+
+fun <A, B, C> zipWith(list1: List<A>,
+                      list2: List<B>,
+                      f: (A) -> (B) -> C): List<C> {
+    tailrec
+    fun zipWith(acc: List<C>,
+                list1: List<A>,
+                list2: List<B>): List<C> = when (list1) {
+        List.Nil -> acc
+        is List.Cons -> when (list2) {
+            List.Nil -> acc
+            is List.Cons ->
+                zipWith(acc.cons(f(list1.head)(list2.head)),
+                        list1.tail, list2.tail)
+        }
+    }
+    return zipWith(List(), list1, list2).reverse()
+}
+
+fun <A, S> unfold(z: S, getNext: (S) -> Option<Pair<A, S>>): List<A> {
+    tailrec fun unfold(acc: List<A>, z: S): List<A> {
+        val next = getNext(z)
+        return when (next) {
+            Option.None -> acc
+            is Option.Some ->
+                unfold(acc.cons(next.value.first), next.value.second)
+        }
+    }
+    return unfold(List.Nil, z).reverse()
+}
+
+fun range(start: Int, end: Int): List<Int> =
+        unfold(start) { i ->
+            if (i < end)
+                Option(Pair(i, i + 1))
+            else
+                Option()
+        }
 
 fun sum(list: List<Int>): Int = when (list) {
     is Nil -> 0
